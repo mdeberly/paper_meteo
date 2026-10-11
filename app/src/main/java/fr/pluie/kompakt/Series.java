@@ -26,4 +26,18 @@ public class Series {
         for (int i = 0; i < 24; i++) if (has[i] && v[i] > m) m = v[i];
         return m;
     }
+
+    /** Plus petite valeur disponible (NaN si aucune) : utile pour les températures, qui peuvent être négatives. */
+    public double low() {
+        double m = Double.NaN;
+        for (int i = 0; i < 24; i++) if (has[i] && !(v[i] >= m)) m = v[i];
+        return m;
+    }
+
+    /** Plus grande valeur disponible (NaN si aucune). */
+    public double high() {
+        double m = Double.NaN;
+        for (int i = 0; i < 24; i++) if (has[i] && !(v[i] <= m)) m = v[i];
+        return m;
+    }
 }

@@ -9,13 +9,14 @@ import android.view.MotionEvent;
 import android.view.View;
 
 /**
- * Les 8 jours (hier → J+6) en 2 lignes de 4 cases. Chaque case montre une valeur
- * (cumul de pluie, durée d'ensoleillement) ou une petite lune. Toucher une case l'ouvre.
+ * Les 8 jours (hier → J+6) en 2 lignes de 4 cases. Chaque case montre le jour, une valeur
+ * (cumul de pluie, durée d'ensoleillement) ou une petite lune, et les températures mini / maxi.
+ * Toucher une case l'ouvre.
  */
 public class WeekStrip extends View {
     public interface OnPick { void pick(int index); }
 
-    private String[] labels, values;
+    private String[] labels, values, temps;
     private double[] moons;
     private boolean south;
     private int selected;
@@ -24,6 +25,7 @@ public class WeekStrip extends View {
     private final Paint ink = new Paint();
     private final Paint label = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint value = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint small = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     public WeekStrip(Context c) {
         super(c);
@@ -32,14 +34,20 @@ public class WeekStrip extends View {
         label.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         value.setTextAlign(Paint.Align.CENTER);
         value.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        small.setTextAlign(Paint.Align.CENTER);
+        small.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
     }
 
     public void setOnPick(OnPick l) { listener = l; }
 
-    /** @param moons élongations lunaires à dessiner à la place des valeurs (ou null) */
-    public void setCells(String[] labels, String[] values, double[] moons, boolean south, int selected) {
+    /**
+     * @param moons élongations lunaires à dessiner à la place des valeurs (ou null)
+     * @param temps "6° / 14°" pour chaque jour
+     */
+    public void setCells(String[] labels, String[] values, double[] moons, String[] temps, boolean south, int selected) {
         this.labels = labels;
         this.values = values;
+        this.temps = temps;
         this.moons = moons;
         this.south = south;
         this.selected = selected;
@@ -53,8 +61,9 @@ public class WeekStrip extends View {
         float w = getWidth(), h = getHeight();
         float cw = w / 4f, ch = h / 2f;
         float line = Math.max(1, h * 0.012f);
-        label.setTextSize(ch * 0.32f);
-        value.setTextSize(ch * 0.36f);
+        label.setTextSize(ch * 0.25f);
+        value.setTextSize(ch * 0.28f);
+        small.setTextSize(ch * 0.23f);
 
         for (int i = 0; i < labels.length && i < 8; i++) {
             float x0 = (i % 4) * cw, y0 = (i / 4) * ch;
@@ -72,14 +81,16 @@ public class WeekStrip extends View {
             int fg = sel ? Color.WHITE : Color.BLACK;
             label.setColor(fg);
             value.setColor(fg);
+            small.setColor(fg);
             float cx = x0 + cw / 2f;
-            c.drawText(labels[i], cx, y0 + ch * 0.42f, label);
+            c.drawText(labels[i], cx, y0 + ch * 0.30f, label);
             if (moons != null) {
-                float r = ch * 0.17f;
-                MoonView.draw(c, cx, y0 + ch * 0.70f, r, moons[i], south, fg, Math.max(1, r * 0.12f));
+                float r = ch * 0.13f;
+                MoonView.draw(c, cx, y0 + ch * 0.51f, r, moons[i], south, fg, Math.max(1, r * 0.12f));
             } else {
-                c.drawText(values[i], cx, y0 + ch * 0.84f, value);
+                c.drawText(values[i], cx, y0 + ch * 0.61f, value);
             }
+            if (temps != null) c.drawText(temps[i], cx, y0 + ch * 0.88f, small);
         }
     }
 

@@ -14,8 +14,10 @@ Quatre onglets :
 
 Pluie, Soleil et Éphéméride :
 
-- Bandeau des 8 jours (cumul de pluie, durée d'ensoleillement ou petite lune) : toucher une case ouvre le jour.
-- Les 24 heures du jour tiennent sur un seul écran (2 colonnes de 12), sans défilement.
+- Bandeau des 8 jours (cumul de pluie, durée d'ensoleillement ou petite lune, températures mini / maxi) :
+  toucher une case ouvre le jour.
+- La journée tient sur un seul écran, sans défilement : heure par heure de 6 h à minuit, la nuit regroupée
+  en 0–3h et 3–6h, avec la température de chaque créneau.
 - Glisser à gauche / à droite pour changer de jour.
 - L'heure en cours est inversée (blanc sur noir). « 07h » = de 7 h à 8 h.
 - Toucher le nom du lieu pour en chercher un autre ou utiliser la position GPS (Chauny par défaut).

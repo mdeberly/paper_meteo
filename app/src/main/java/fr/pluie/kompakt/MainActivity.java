@@ -38,6 +38,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -202,7 +203,7 @@ public class MainActivity extends Activity {
         // Les 8 jours.
         strip = new WeekStrip(this);
         strip.setOnPick(i -> { selected = i; render(); });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(88));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(104));
         lp.topMargin = dp(6);
         root.addView(strip, lp);
 
@@ -211,7 +212,7 @@ public class MainActivity extends Activity {
         titleView.setPadding(0, dp(6), 0, 0);
         root.addView(titleView);
         totalView = text(15, false);
-        totalView.setPadding(0, 0, 0, dp(4));
+        totalView.setPadding(0, dp(6), 0, dp(4));
         root.addView(totalView);
 
         // Glisser à gauche / à droite pour changer de jour, sur tous les onglets.
@@ -247,6 +248,7 @@ public class MainActivity extends Activity {
     private LinearLayout buildEphemeris() {
         LinearLayout p = new LinearLayout(this);
         p.setOrientation(LinearLayout.VERTICAL);
+        p.setPadding(0, dp(6), 0, 0);
 
         TextView l = text(13, false);
         l.setText("Fête du jour");
@@ -271,7 +273,7 @@ public class MainActivity extends Activity {
         LinearLayout moon = new LinearLayout(this);
         moon.setOrientation(LinearLayout.HORIZONTAL);
         moonView = new MoonView(this);
-        moon.addView(moonView, new LinearLayout.LayoutParams(dp(96), ViewGroup.LayoutParams.MATCH_PARENT));
+        moon.addView(moonView, new LinearLayout.LayoutParams(dp(116), ViewGroup.LayoutParams.MATCH_PARENT));
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
         info.setPadding(dp(12), 0, 0, 0);
@@ -357,6 +359,14 @@ public class MainActivity extends Activity {
         String[] labels = new String[days.size()];
         for (int i = 0; i < labels.length; i++) labels[i] = Fmt.shortLabel(i, days.get(i).date);
 
+        String[] temps = new String[days.size()];
+        for (int i = 0; i < temps.length; i++) {
+            Series t = days.get(i).temp;
+            temps[i] = t.hasAny() ? Math.round(t.low()) + "° / " + Math.round(t.high()) + "°" : "";
+        }
+
+        // Le titre n'est utile que sur le résumé : ailleurs, le bandeau montre le jour choisi.
+        titleView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
         if (tab == TAB_SUMMARY) {
             titleView.setText(Fmt.title(1, today));
             renderSummary(zone);
@@ -365,8 +375,7 @@ public class MainActivity extends Activity {
         }
 
         if (tab == TAB_EPH) {
-            titleView.setText(Fmt.title(selected, d.date));
-            renderEphemeris(d, today, zone, labels);
+            renderEphemeris(d, today, zone, labels, temps);
             statusView.setText("Soleil et lune calculés sur le téléphone, sans connexion");
             return;
         }
@@ -377,20 +386,67 @@ public class MainActivity extends Activity {
             Series s = rain ? days.get(i).rain : days.get(i).sun;
             values[i] = !s.hasAny() ? "n/d" : rain ? Fmt.total(s.total()) + " mm" : Fmt.duration(s.total());
         }
-        strip.setCells(labels, values, null, false, selected);
+        strip.setCells(labels, values, null, temps, false, selected);
 
         if (forecast == null) {
-            titleView.setText("Aucune donnée");
-            totalView.setText("Touchez « Actualiser » (connexion requise).");
-            dayView.setSeries(null, 1, 0, null, null, -1);
+            totalView.setText("Aucune donnée : touchez « Actualiser » (connexion requise).");
+            dayView.setCells(null, false);
         } else {
-            titleView.setText(Fmt.title(selected, d.date));
             int hour = selected == 1 ? forecast.currentHour() : -1;
-            if (rain) renderRain(d, hour);
+            if (rain) renderRain(d, hour, zone);
             else renderSun(d, hour, zone);
         }
 
         updateStatus(rain ? "« 07h » = de 7 h à 8 h · " : "minutes de soleil / heure · ");
+    }
+
+    /** Créneaux de la grille : la nuit regroupée par 3 heures, puis heure par heure. */
+    private static final int[][] SLOTS = {
+            {0, 3}, {3, 6}, {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 12}, {12, 13}, {13, 14},
+            {14, 15}, {15, 16}, {16, 17}, {17, 18}, {18, 19}, {19, 20}, {20, 21}, {21, 22}, {22, 23}, {23, 24}};
+
+    /**
+     * Cases de la grille pour la pluie ou le soleil.
+     * @param scale valeur (somme sur la case) correspondant à une barre pleine
+     * @param min   en dessous, pas de barre
+     * @param sun   onglet Soleil : icônes météo, et valeur vide la nuit
+     */
+    private List<DayView.Cell> cells(Day d, Series s, double scale, double min, DayView.Format format,
+                                     boolean sun, int hour, ZoneId zone) {
+        List<Weather.Hour> hs = Weather.hours(forecast, zone, lat(), lon(), d.date, 0, 24);
+        List<DayView.Cell> out = new ArrayList<>();
+        for (int[] slot : SLOTS) {
+            int a = slot[0], b = slot[1];
+            DayView.Cell c = new DayView.Cell();
+            c.label = b - a == 1 ? String.format(Locale.FRENCH, "%02dh", a) : a + "–" + b + "h";
+            c.highlight = hour >= a && hour < b;
+            boolean has = false, dark = true;
+            int nights = 0, tn = 0;
+            double sum = 0, tsum = 0;
+            for (int h = a; h < b; h++) {
+                Weather.Hour x = hs.get(h);
+                if (s.has[h]) {
+                    has = true;
+                    sum += s.v[h];
+                }
+                if (x.daylight > 0) dark = false;
+                if (x.night) nights++;
+                if (!Double.isNaN(x.temp)) {
+                    tsum += x.temp;
+                    tn++;
+                }
+            }
+            if (tn > 0) c.temp = Math.round(tsum / tn) + "°";
+            boolean blank = sun && dark;
+            c.value = !has ? "n/d" : blank ? "" : format.value(sum);
+            if (has && !blank && sum >= min) c.bar = sum / scale;
+            if (sun) {
+                c.icon = Weather.kindOf(hs.subList(a, b));
+                c.iconNight = nights * 2 > b - a;
+            }
+            out.add(c);
+        }
+        return out;
     }
 
     private void updateStatus(String legend) {
@@ -413,7 +469,7 @@ public class MainActivity extends Activity {
         nextHoursView.setHours(Weather.hours(forecast, zone, lat(), lon(), now.toLocalDate(), now.getHour(), 6));
     }
 
-    private void renderRain(Day d, int hour) {
+    private void renderRain(Day d, int hour, ZoneId zone) {
         Series s = d.rain;
         // Échelle commune à toute la semaine pour comparer les jours (barre pleine ≥ 2 mm/h).
         double scale = 2;
@@ -426,17 +482,12 @@ public class MainActivity extends Activity {
             if (!s.isComplete()) t += "  (partiel)";
             totalView.setText(t);
         }
-        dayView.setSeries(s, scale, 0.05, Fmt::mm, null, hour);
+        dayView.setCells(cells(d, s, scale, 0.05, Fmt::mm, false, hour, zone), false);
     }
 
     private void renderSun(Day d, int hour, ZoneId zone) {
         Series s = d.sun;
         Sun sun = Sun.of(d.date, lat(), lon(), zone);
-        boolean[] night = new boolean[24];
-        for (int h = 0; h < 24; h++) {
-            Instant start = d.date.atTime(h, 0).atZone(zone).toInstant();
-            night[h] = sun.isNight(start, start.plusSeconds(3600));
-        }
         if (!s.hasAny()) {
             totalView.setText(forecast.complete ? "Pas de données pour ce jour" : "Touchez « Actualiser » pour l'ensoleillement");
         } else {
@@ -444,19 +495,11 @@ public class MainActivity extends Activity {
             if (!s.isComplete()) t += "  (partiel)";
             totalView.setText(t);
         }
-        // Barre pleine = 60 minutes de soleil dans l'heure. Les heures de nuit restent vides.
-        dayView.setSeries(s, 60, 0.5, Fmt::minutes, night, hour);
-        List<Weather.Hour> hs = Weather.hours(forecast, zone, lat(), lon(), d.date, 0, 24);
-        int[] icons = new int[24];
-        boolean[] dark = new boolean[24];
-        for (int h = 0; h < 24; h++) {
-            icons[h] = hs.get(h).kind;
-            dark[h] = hs.get(h).night;
-        }
-        dayView.setIcons(icons, dark);
+        // Barre pleine = 60 minutes de soleil dans l'heure. Les heures de nuit restent sans valeur.
+        dayView.setCells(cells(d, s, 60, 0.5, Fmt::minutes, true, hour, zone), true);
     }
 
-    private void renderEphemeris(Day d, LocalDate today, ZoneId zone, String[] labels) {
+    private void renderEphemeris(Day d, LocalDate today, ZoneId zone, String[] labels, String[] temps) {
         boolean south = lat() < 0;
 
         // Bandeau : la lune de chaque jour, vers 22 h.
@@ -464,7 +507,7 @@ public class MainActivity extends Activity {
         for (int i = 0; i < moons.length; i++) {
             moons[i] = MoonPhase.at(days.get(i).date.atTime(22, 0).atZone(zone).toInstant()).elong;
         }
-        strip.setCells(labels, null, moons, south, selected);
+        strip.setCells(labels, null, moons, temps, south, selected);
 
         saintView.setText(Saints.of(d.date));
         String feast = Saints.feast(d.date);

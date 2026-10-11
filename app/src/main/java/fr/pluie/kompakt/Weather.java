@@ -23,6 +23,7 @@ final class Weather {
         int h;
         boolean has;          // données disponibles
         boolean night;        // moins d'une demi-heure de jour dans le créneau
+        double daylight;      // minutes de jour dans le créneau
         double mm;
         double temp = Double.NaN;
         /** 0 = couvert … 1 = dégagé, -1 si inconnu. */
@@ -48,6 +49,7 @@ final class Weather {
             Instant a = t.atZone(zone).toInstant();
             double daylight = sun.daylightMinutes(a, a.plusSeconds(3600));
             x.night = daylight < 30;
+            x.daylight = daylight;
 
             Day d = f == null ? null : f.day(x.date);
             if (d != null && d.rain.has[x.h]) {
@@ -65,17 +67,42 @@ final class Weather {
                 x.heavy = x.mm >= 2.5 || code == 65 || code == 67 || code == 75 || code == 82 || code == 86;
                 x.wet = x.storm || x.heavy || x.mm >= 0.1
                         || (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 86);
-                if (x.storm) x.kind = STORM;
-                else if (x.heavy) x.kind = HEAVY_RAIN;
-                else if (x.wet) x.kind = LIGHT_RAIN;
-                else if (c >= 0.75) x.kind = CLEAR;
-                else if (c >= 0.45) x.kind = FEW_CLOUDS;
-                else if (c >= 0.15) x.kind = MANY_CLOUDS;
-                else if (c >= 0) x.kind = OVERCAST;
+                x.kind = classify(x.storm, x.heavy, x.wet, c);
             }
             out.add(x);
         }
         return out;
+    }
+
+    private static int classify(boolean storm, boolean heavy, boolean wet, double clear) {
+        if (storm) return STORM;
+        if (heavy) return HEAVY_RAIN;
+        if (wet) return LIGHT_RAIN;
+        if (clear >= 0.75) return CLEAR;
+        if (clear >= 0.45) return FEW_CLOUDS;
+        if (clear >= 0.15) return MANY_CLOUDS;
+        if (clear >= 0) return OVERCAST;
+        return NONE;
+    }
+
+    /** Icône d'un groupe d'heures (ex. 0–3h) : le temps le plus marquant, sinon le ciel moyen. */
+    static int kindOf(List<Hour> hs) {
+        boolean any = false, storm = false, heavy = false, wet = false;
+        double sum = 0;
+        int n = 0;
+        for (Hour x : hs) {
+            if (!x.has) continue;
+            any = true;
+            storm |= x.storm;
+            heavy |= x.heavy;
+            wet |= x.wet;
+            if (x.clear >= 0) {
+                sum += x.clear;
+                n++;
+            }
+        }
+        if (!any) return NONE;
+        return classify(storm, heavy, wet, n > 0 ? sum / n : -1);
     }
 
     // ---------------------------------------------------------------- résumé écrit
