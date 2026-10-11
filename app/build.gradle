@@ -1,0 +1,43 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'fr.pluie.kompakt'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'fr.pluie.kompakt'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    // Clé de signature fixe : chaque nouvelle version pourra s'installer par-dessus l'ancienne.
+    signingConfigs {
+        release {
+            storeFile file('pluie.keystore')
+            storePassword 'pluiepluie'
+            keyAlias 'pluie'
+            keyPassword 'pluiepluie'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
