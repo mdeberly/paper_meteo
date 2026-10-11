@@ -1,21 +1,25 @@
-# Pluie — pluie, soleil et éphéméride pour Mudita Kompakt
+# Pluie — résumé, pluie, soleil et éphéméride pour Mudita Kompakt
 
-Trois onglets, pour **hier, aujourd'hui et les 6 jours suivants** :
+Quatre onglets :
 
-- **Pluie** : millimètres de pluie heure par heure.
-- **Soleil** : minutes d'ensoleillement heure par heure (les heures de nuit restent vides).
+- **Résumé** (ouvert à chaque lancement) : quelques phrases qui décrivent le temps des heures à venir
+  (la journée entière le matin, l'après-midi à partir de midi, la soirée à partir de 17 h, la nuit après 22 h),
+  une phrase sur la pluie des 2 prochaines heures, et les 6 prochaines heures en icônes.
+- **Pluie** : millimètres de pluie heure par heure, d'hier à J+6.
+- **Soleil** : minutes d'ensoleillement heure par heure, avec une icône par heure (soleil, soleil voilé,
+  très nuageux, couvert, pluie faible, forte pluie, orage ; lune la nuit). Les heures de nuit n'ont pas de valeur.
 - **Éphéméride** : fête du jour (calendrier français, avec Pâques, fête des mères…), lever et coucher
   du soleil dans la ville choisie, durée du jour, phase de la Lune en toutes lettres avec la Lune dessinée,
   et les prochaines phases.
 
-Commun aux trois onglets :
+Pluie, Soleil et Éphéméride :
 
 - Bandeau des 8 jours (cumul de pluie, durée d'ensoleillement ou petite lune) : toucher une case ouvre le jour.
 - Les 24 heures du jour tiennent sur un seul écran (2 colonnes de 12), sans défilement.
 - Glisser à gauche / à droite pour changer de jour.
 - L'heure en cours est inversée (blanc sur noir). « 07h » = de 7 h à 8 h.
 - Toucher le nom du lieu pour en chercher un autre ou utiliser la position GPS (Chauny par défaut).
-- Noir et blanc pur, aucune animation, aucun service Google. Pluie et soleil : Open-Meteo (gratuit, sans clé),
+- Noir et blanc pur, aucune animation, aucun service Google. Prévisions : Open-Meteo (gratuit, sans clé),
   qui s'appuie sur les modèles de Météo-France pour la France ; dernières données gardées hors connexion.
   Lever/coucher du soleil et phases de la Lune sont calculés sur le téléphone, sans connexion.
 

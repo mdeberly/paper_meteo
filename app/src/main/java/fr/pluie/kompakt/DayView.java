@@ -21,6 +21,8 @@ public class DayView extends View {
     private double scale = 2, min;
     private Format format;
     private boolean[] night;
+    private int[] icons;
+    private boolean[] iconNight;
     private int highlightHour = -1;
 
     private final Paint ink = new Paint();
@@ -50,6 +52,14 @@ public class DayView extends View {
         this.format = format;
         this.night = night;
         this.highlightHour = highlightHour;
+        this.icons = null;
+        invalidate();
+    }
+
+    /** Icône météo de chaque créneau (voir {@link Weather}), entre l'heure et la barre. */
+    public void setIcons(int[] icons, boolean[] iconNight) {
+        this.icons = icons;
+        this.iconNight = iconNight;
         invalidate();
     }
 
@@ -87,8 +97,14 @@ public class DayView extends View {
             String val = !series.has[i] ? "n/d" : dark ? "" : format.value(series.v[i]);
             c.drawText(val, x0 + cw - pad, baseline, bold);
 
-            // Barre proportionnelle, entre l'heure et la valeur.
+            // Icône météo, puis barre proportionnelle, entre l'heure et la valeur.
             float barL = x0 + pad + ts * 1.9f;
+            if (icons != null) {
+                float is = Math.min(ch * 0.9f, cw * 0.17f);
+                WeatherIcon.draw(c, icons[i], iconNight[i], barL + is / 2f, y0 + ch / 2f, is,
+                        fg, inv ? Color.BLACK : Color.WHITE);
+                barL += is + pad;
+            }
             float barR = x0 + cw - pad - ts * 1.7f;
             if (series.has[i] && !dark && series.v[i] >= min && barR > barL) {
                 double f = Math.min(1.0, series.v[i] / scale);

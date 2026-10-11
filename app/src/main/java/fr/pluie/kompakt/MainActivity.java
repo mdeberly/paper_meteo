@@ -36,6 +36,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
@@ -50,8 +51,8 @@ public class MainActivity extends Activity {
     private static final long STALE_MS = 30 * 60 * 1000L;
     private static final int REQ_LOC = 1;
 
-    private static final int TAB_RAIN = 0, TAB_SUN = 1, TAB_EPH = 2;
-    private static final String[] TAB_NAMES = {"Pluie", "Soleil", "Éphéméride"};
+    private static final int TAB_SUMMARY = 0, TAB_RAIN = 1, TAB_SUN = 2, TAB_EPH = 3;
+    private static final String[] TAB_NAMES = {"Résumé", "Pluie", "Soleil", "Éphéméride"};
 
     private SharedPreferences prefs;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -72,13 +73,16 @@ public class MainActivity extends Activity {
     private TextView saintView, feastView, riseView, setView, dayLengthView, phaseView, moonInfoView, nextPhasesView;
     private MoonView moonView;
 
+    private LinearLayout summaryView;
+    private TextView summaryText, soonView;
+    private NextHoursView nextHoursView;
+
     // ---------------------------------------------------------------- cycle de vie
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences("pluie", MODE_PRIVATE);
-        tab = Math.max(0, Math.min(TAB_NAMES.length - 1, prefs.getInt("tab", TAB_RAIN)));
         buildUi();
         String cached = prefs.getString("json", null);
         if (cached != null) {
@@ -88,10 +92,18 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        // À chaque ouverture : le résumé du jour.
+        tab = TAB_SUMMARY;
+        selected = 1;
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         boolean stale = System.currentTimeMillis() - prefs.getLong("fetched", 0) > STALE_MS;
-        if (stale || (forecast != null && !forecast.hasSun)) refresh();
+        if (stale || (forecast != null && !forecast.complete)) refresh();
         else render(); // la date a pu changer depuis la dernière ouverture
     }
 
@@ -173,13 +185,15 @@ public class MainActivity extends Activity {
         tabs.setBackground(frameLine);
         for (int i = 0; i < TAB_NAMES.length; i++) {
             final int index = i;
-            TextView t = text(16, true);
+            TextView t = text(15, true);
             t.setText(TAB_NAMES[i]);
             t.setGravity(Gravity.CENTER);
             t.setSingleLine(true);
+            t.setPadding(dp(2), 0, dp(2), 0);
             t.setOnClickListener(v -> selectTab(index));
             tabViews[i] = t;
-            tabs.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+            // Largeur selon le texte, la place restante partagée à parts égales.
+            tabs.addView(t, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         }
         LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(40));
         tlp.topMargin = dp(6);
@@ -219,6 +233,9 @@ public class MainActivity extends Activity {
         ephView = buildEphemeris();
         ephView.setOnTouchListener(swipeListener);
         root.addView(ephView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+
+        summaryView = buildSummary();
+        root.addView(summaryView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         statusView = text(12, false);
         statusView.setPadding(0, dp(4), 0, 0);
@@ -270,6 +287,27 @@ public class MainActivity extends Activity {
         return p;
     }
 
+    private LinearLayout buildSummary() {
+        LinearLayout p = new LinearLayout(this);
+        p.setOrientation(LinearLayout.VERTICAL);
+        summaryText = text(18, false);
+        summaryText.setLineSpacing(0, 1.1f);
+        summaryText.setPadding(0, dp(4), 0, 0);
+        p.addView(summaryText);
+        p.addView(rule());
+        TextView l = text(13, false);
+        l.setText("Dans les 2 prochaines heures");
+        p.addView(l);
+        soonView = text(18, true);
+        p.addView(soonView);
+        p.addView(rule());
+        nextHoursView = new NextHoursView(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
+        lp.topMargin = dp(2);
+        p.addView(nextHoursView, lp);
+        return p;
+    }
+
     private LinearLayout labelled(String label, TextView value) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -283,7 +321,6 @@ public class MainActivity extends Activity {
     private void selectTab(int i) {
         if (i == tab) return;
         tab = i;
-        prefs.edit().putInt("tab", tab).apply();
         render();
     }
 
@@ -304,9 +341,12 @@ public class MainActivity extends Activity {
             tabViews[i].setBackgroundColor(on ? Color.BLACK : Color.TRANSPARENT);
             tabViews[i].setTextColor(on ? Color.WHITE : Color.BLACK);
         }
-        dayView.setVisibility(tab == TAB_EPH ? View.GONE : View.VISIBLE);
+        boolean grid = tab == TAB_RAIN || tab == TAB_SUN;
+        dayView.setVisibility(grid ? View.VISIBLE : View.GONE);
         ephView.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
-        totalView.setVisibility(tab == TAB_EPH ? View.GONE : View.VISIBLE);
+        summaryView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
+        totalView.setVisibility(grid ? View.VISIBLE : View.GONE);
+        strip.setVisibility(tab == TAB_SUMMARY ? View.GONE : View.VISIBLE);
 
         ZoneId zone = zone();
         LocalDate today = LocalDate.now(zone);
@@ -316,6 +356,13 @@ public class MainActivity extends Activity {
 
         String[] labels = new String[days.size()];
         for (int i = 0; i < labels.length; i++) labels[i] = Fmt.shortLabel(i, days.get(i).date);
+
+        if (tab == TAB_SUMMARY) {
+            titleView.setText(Fmt.title(1, today));
+            renderSummary(zone);
+            updateStatus("");
+            return;
+        }
 
         if (tab == TAB_EPH) {
             titleView.setText(Fmt.title(selected, d.date));
@@ -343,12 +390,27 @@ public class MainActivity extends Activity {
             else renderSun(d, hour, zone);
         }
 
-        if (!loading) {
-            long f = prefs.getLong("fetched", 0);
-            String when = f == 0 ? "?" : new SimpleDateFormat("dd/MM HH:mm", Locale.FRENCH).format(new Date(f));
-            String legend = rain ? "« 07h » = de 7 h à 8 h" : "minutes de soleil / heure";
-            statusView.setText("Màj " + when + " · " + legend + " · Open-Meteo");
+        updateStatus(rain ? "« 07h » = de 7 h à 8 h · " : "minutes de soleil / heure · ");
+    }
+
+    private void updateStatus(String legend) {
+        if (loading) return;
+        long f = prefs.getLong("fetched", 0);
+        String when = f == 0 ? "?" : new SimpleDateFormat("dd/MM HH:mm", Locale.FRENCH).format(new Date(f));
+        statusView.setText("Màj " + when + " · " + legend + "Open-Meteo");
+    }
+
+    private void renderSummary(ZoneId zone) {
+        if (forecast == null) {
+            summaryText.setText("Aucune donnée. Touchez « Actualiser » (connexion requise).");
+            soonView.setText("");
+            nextHoursView.setHours(null);
+            return;
         }
+        LocalDateTime now = LocalDateTime.now(zone);
+        summaryText.setText(String.join("\n", Weather.summary(forecast, zone, lat(), lon(), now)));
+        soonView.setText(Weather.nextTwoHours(forecast, zone, lat(), lon(), now));
+        nextHoursView.setHours(Weather.hours(forecast, zone, lat(), lon(), now.toLocalDate(), now.getHour(), 6));
     }
 
     private void renderRain(Day d, int hour) {
@@ -376,7 +438,7 @@ public class MainActivity extends Activity {
             night[h] = sun.isNight(start, start.plusSeconds(3600));
         }
         if (!s.hasAny()) {
-            totalView.setText(forecast.hasSun ? "Pas de données pour ce jour" : "Touchez « Actualiser » pour l'ensoleillement");
+            totalView.setText(forecast.complete ? "Pas de données pour ce jour" : "Touchez « Actualiser » pour l'ensoleillement");
         } else {
             String t = "Soleil " + Fmt.duration(s.total()) + " sur " + Fmt.duration(sun.dayMinutes()) + " de jour";
             if (!s.isComplete()) t += "  (partiel)";
@@ -384,6 +446,14 @@ public class MainActivity extends Activity {
         }
         // Barre pleine = 60 minutes de soleil dans l'heure. Les heures de nuit restent vides.
         dayView.setSeries(s, 60, 0.5, Fmt::minutes, night, hour);
+        List<Weather.Hour> hs = Weather.hours(forecast, zone, lat(), lon(), d.date, 0, 24);
+        int[] icons = new int[24];
+        boolean[] dark = new boolean[24];
+        for (int h = 0; h < 24; h++) {
+            icons[h] = hs.get(h).kind;
+            dark[h] = hs.get(h).night;
+        }
+        dayView.setIcons(icons, dark);
     }
 
     private void renderEphemeris(Day d, LocalDate today, ZoneId zone, String[] labels) {
@@ -446,7 +516,8 @@ public class MainActivity extends Activity {
         statusView.setText("Mise à jour…");
         final String url = String.format(Locale.US,
                 "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
-                        + "&hourly=precipitation,sunshine_duration&past_days=1&forecast_days=8&timezone=auto",
+                        + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m"
+                        + "&past_days=1&forecast_days=8&timezone=auto",
                 lat(), lon());
         io.execute(() -> {
             try {

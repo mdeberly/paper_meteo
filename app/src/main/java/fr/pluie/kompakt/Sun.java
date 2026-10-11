@@ -46,6 +46,15 @@ final class Sun {
         return (set.toInstant().toEpochMilli() - rise.toInstant().toEpochMilli()) / 60000.0;
     }
 
+    /** Minutes de jour dans le créneau [start, end). */
+    double daylightMinutes(Instant start, Instant end) {
+        if (state == ALWAYS_UP) return (end.toEpochMilli() - start.toEpochMilli()) / 60000.0;
+        if (state == ALWAYS_DOWN) return 0;
+        long a = Math.max(start.toEpochMilli(), rise.toInstant().toEpochMilli());
+        long b = Math.min(end.toEpochMilli(), set.toInstant().toEpochMilli());
+        return Math.max(0, b - a) / 60000.0;
+    }
+
     /** Vrai si le créneau [start, end) est entièrement de nuit. */
     boolean isNight(Instant start, Instant end) {
         if (state == ALWAYS_UP) return false;

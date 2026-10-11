@@ -19,13 +19,13 @@ import java.util.TreeMap;
  */
 public class Forecast {
     public final ZoneId zone;
-    /** Faux pour un ancien cache enregistré avant l'ajout de l'ensoleillement. */
-    public final boolean hasSun;
+    /** Faux pour un ancien cache enregistré avant l'ajout de l'ensoleillement, des nuages, etc. */
+    public final boolean complete;
     private final Map<LocalDate, Day> byDate = new TreeMap<>();
 
-    private Forecast(ZoneId zone, boolean hasSun) {
+    private Forecast(ZoneId zone, boolean complete) {
         this.zone = zone;
-        this.hasSun = hasSun;
+        this.complete = complete;
     }
 
     public static Forecast parse(String json) throws Exception {
@@ -40,7 +40,10 @@ public class Forecast {
         JSONArray times = hourly.getJSONArray("time");
         JSONArray precip = hourly.optJSONArray("precipitation");
         JSONArray sun = hourly.optJSONArray("sunshine_duration");
-        Forecast f = new Forecast(zone, sun != null);
+        JSONArray cloud = hourly.optJSONArray("cloud_cover");
+        JSONArray temp = hourly.optJSONArray("temperature_2m");
+        JSONArray code = hourly.optJSONArray("weather_code");
+        Forecast f = new Forecast(zone, sun != null && cloud != null && temp != null && code != null);
         for (int i = 0; i < times.length(); i++) {
             LocalDateTime slotStart = LocalDateTime.parse(times.getString(i)).minusHours(1);
             LocalDate d = slotStart.toLocalDate();
@@ -52,6 +55,9 @@ public class Forecast {
             int h = slotStart.getHour();
             put(day.rain, precip, i, h, 1);
             put(day.sun, sun, i, h, 1 / 60.0); // secondes → minutes
+            put(day.cloud, cloud, i, h, 1);
+            put(day.temp, temp, i, h, 1);
+            if (code != null && i < code.length() && !code.isNull(i)) day.code[h] = code.getInt(i);
         }
         return f;
     }
@@ -61,6 +67,11 @@ public class Forecast {
             s.v[h] = a.getDouble(i) * factor;
             s.has[h] = true;
         }
+    }
+
+    /** La journée demandée, ou null si elle n'est pas dans les données. */
+    public Day day(LocalDate d) {
+        return byDate.get(d);
     }
 
     public LocalDate today() {
