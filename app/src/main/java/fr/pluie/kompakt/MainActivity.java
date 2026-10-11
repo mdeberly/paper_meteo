@@ -24,6 +24,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,6 +34,9 @@ import org.json.JSONObject;
 
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -46,6 +50,9 @@ public class MainActivity extends Activity {
     private static final long STALE_MS = 30 * 60 * 1000L;
     private static final int REQ_LOC = 1;
 
+    private static final int TAB_RAIN = 0, TAB_SUN = 1, TAB_EPH = 2;
+    private static final String[] TAB_NAMES = {"Pluie", "Soleil", "Éphéméride"};
+
     private SharedPreferences prefs;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -53,11 +60,17 @@ public class MainActivity extends Activity {
     private Forecast forecast;
     private List<Day> days;
     private int selected = 1; // 0 = hier, 1 = aujourd'hui
+    private int tab;
     private boolean loading;
 
     private TextView placeView, titleView, totalView, statusView;
+    private final TextView[] tabViews = new TextView[TAB_NAMES.length];
     private WeekStrip strip;
     private DayView dayView;
+
+    private LinearLayout ephView;
+    private TextView saintView, feastView, riseView, setView, dayLengthView, phaseView, moonInfoView, nextPhasesView;
+    private MoonView moonView;
 
     // ---------------------------------------------------------------- cycle de vie
 
@@ -65,6 +78,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences("pluie", MODE_PRIVATE);
+        tab = Math.max(0, Math.min(TAB_NAMES.length - 1, prefs.getInt("tab", TAB_RAIN)));
         buildUi();
         String cached = prefs.getString("json", null);
         if (cached != null) {
@@ -76,7 +90,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (System.currentTimeMillis() - prefs.getLong("fetched", 0) > STALE_MS) refresh();
+        boolean stale = System.currentTimeMillis() - prefs.getLong("fetched", 0) > STALE_MS;
+        if (stale || (forecast != null && !forecast.hasSun)) refresh();
         else render(); // la date a pu changer depuis la dernière ouverture
     }
 
@@ -114,13 +129,26 @@ public class MainActivity extends Activity {
         return b;
     }
 
+    private View rule() {
+        View v = new View(this);
+        v.setBackgroundColor(Color.BLACK);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2));
+        lp.topMargin = dp(6);
+        lp.bottomMargin = dp(4);
+        v.setLayoutParams(lp);
+        return v;
+    }
+
     private void buildUi() {
+        // Le cadre absorbe les marges système ; la marge de 8 dp reste sur le contenu.
+        FrameLayout frame = new FrameLayout(this);
+        frame.setBackgroundColor(Color.WHITE);
+        frame.setFitsSystemWindows(true);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.WHITE);
-        root.setFitsSystemWindows(true);
         int m = dp(8);
         root.setPadding(m, m, m, m);
+        frame.addView(root, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         // Ligne du haut : lieu (touchable) + bouton Actualiser.
         LinearLayout top = new LinearLayout(this);
@@ -128,7 +156,7 @@ public class MainActivity extends Activity {
         top.setGravity(Gravity.CENTER_VERTICAL);
         placeView = text(20, true);
         placeView.setSingleLine(true);
-        placeView.setPadding(0, dp(6), dp(8), dp(6));
+        placeView.setPadding(0, dp(4), dp(8), dp(4));
         placeView.setOnClickListener(v -> chooseLocation());
         top.addView(placeView, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         TextView refresh = button("Actualiser");
@@ -136,23 +164,43 @@ public class MainActivity extends Activity {
         top.addView(refresh);
         root.addView(top);
 
+        // Onglets.
+        LinearLayout tabs = new LinearLayout(this);
+        tabs.setOrientation(LinearLayout.HORIZONTAL);
+        GradientDrawable frameLine = new GradientDrawable();
+        frameLine.setColor(Color.WHITE);
+        frameLine.setStroke(dp(2), Color.BLACK);
+        tabs.setBackground(frameLine);
+        for (int i = 0; i < TAB_NAMES.length; i++) {
+            final int index = i;
+            TextView t = text(16, true);
+            t.setText(TAB_NAMES[i]);
+            t.setGravity(Gravity.CENTER);
+            t.setSingleLine(true);
+            t.setOnClickListener(v -> selectTab(index));
+            tabViews[i] = t;
+            tabs.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        }
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(40));
+        tlp.topMargin = dp(6);
+        root.addView(tabs, tlp);
+
         // Les 8 jours.
         strip = new WeekStrip(this);
         strip.setOnPick(i -> { selected = i; render(); });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(96));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(88));
         lp.topMargin = dp(6);
         root.addView(strip, lp);
 
         // Titre du jour + cumul.
         titleView = text(19, true);
-        titleView.setPadding(0, dp(8), 0, 0);
+        titleView.setPadding(0, dp(6), 0, 0);
         root.addView(titleView);
         totalView = text(15, false);
         totalView.setPadding(0, 0, 0, dp(4));
         root.addView(totalView);
 
-        // Grille horaire (toute la place restante, pas de défilement).
-        dayView = new DayView(this);
+        // Glisser à gauche / à droite pour changer de jour, sur tous les onglets.
         GestureDetector swipe = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override public boolean onDown(MotionEvent e) { return true; }
             @Override public boolean onFling(MotionEvent a, MotionEvent b, float vx, float vy) {
@@ -161,14 +209,82 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
-        dayView.setOnTouchListener((v, e) -> swipe.onTouchEvent(e));
+        View.OnTouchListener swipeListener = (v, e) -> swipe.onTouchEvent(e);
+
+        // Grille horaire (pluie ou soleil), toute la place restante, pas de défilement.
+        dayView = new DayView(this);
+        dayView.setOnTouchListener(swipeListener);
         root.addView(dayView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+
+        ephView = buildEphemeris();
+        ephView.setOnTouchListener(swipeListener);
+        root.addView(ephView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         statusView = text(12, false);
         statusView.setPadding(0, dp(4), 0, 0);
         root.addView(statusView);
 
-        setContentView(root);
+        setContentView(frame);
+    }
+
+    private LinearLayout buildEphemeris() {
+        LinearLayout p = new LinearLayout(this);
+        p.setOrientation(LinearLayout.VERTICAL);
+
+        TextView l = text(13, false);
+        l.setText("Fête du jour");
+        p.addView(l);
+        saintView = text(24, true);
+        p.addView(saintView);
+        feastView = text(16, false);
+        p.addView(feastView);
+        p.addView(rule());
+
+        LinearLayout sun = new LinearLayout(this);
+        sun.setOrientation(LinearLayout.HORIZONTAL);
+        riseView = text(22, true);
+        setView = text(22, true);
+        sun.addView(labelled("Lever du soleil", riseView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        sun.addView(labelled("Coucher du soleil", setView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        p.addView(sun);
+        dayLengthView = text(15, false);
+        p.addView(dayLengthView);
+        p.addView(rule());
+
+        LinearLayout moon = new LinearLayout(this);
+        moon.setOrientation(LinearLayout.HORIZONTAL);
+        moonView = new MoonView(this);
+        moon.addView(moonView, new LinearLayout.LayoutParams(dp(96), ViewGroup.LayoutParams.MATCH_PARENT));
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        info.setPadding(dp(12), 0, 0, 0);
+        phaseView = text(19, true);
+        moonInfoView = text(15, false);
+        nextPhasesView = text(14, false);
+        nextPhasesView.setPadding(0, dp(4), 0, 0);
+        info.addView(phaseView);
+        info.addView(moonInfoView);
+        info.addView(nextPhasesView);
+        moon.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        p.addView(moon, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        return p;
+    }
+
+    private LinearLayout labelled(String label, TextView value) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TextView l = text(13, false);
+        l.setText(label);
+        box.addView(l);
+        box.addView(value);
+        return box;
+    }
+
+    private void selectTab(int i) {
+        if (i == tab) return;
+        tab = i;
+        prefs.edit().putInt("tab", tab).apply();
+        render();
     }
 
     private void move(int delta) {
@@ -177,40 +293,146 @@ public class MainActivity extends Activity {
         if (n != selected) { selected = n; render(); }
     }
 
+    private ZoneId zone() {
+        return forecast != null ? forecast.zone : ZoneId.systemDefault();
+    }
+
     private void render() {
         placeView.setText(prefs.getString("name", DEF_NAME) + "  ▾");
+        for (int i = 0; i < tabViews.length; i++) {
+            boolean on = i == tab;
+            tabViews[i].setBackgroundColor(on ? Color.BLACK : Color.TRANSPARENT);
+            tabViews[i].setTextColor(on ? Color.WHITE : Color.BLACK);
+        }
+        dayView.setVisibility(tab == TAB_EPH ? View.GONE : View.VISIBLE);
+        ephView.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
+        totalView.setVisibility(tab == TAB_EPH ? View.GONE : View.VISIBLE);
+
+        ZoneId zone = zone();
+        LocalDate today = LocalDate.now(zone);
+        days = forecast != null ? forecast.window() : Forecast.emptyWindow(today);
+        selected = Math.max(0, Math.min(days.size() - 1, selected));
+        Day d = days.get(selected);
+
+        String[] labels = new String[days.size()];
+        for (int i = 0; i < labels.length; i++) labels[i] = Fmt.shortLabel(i, days.get(i).date);
+
+        if (tab == TAB_EPH) {
+            titleView.setText(Fmt.title(selected, d.date));
+            renderEphemeris(d, today, zone, labels);
+            statusView.setText("Soleil et lune calculés sur le téléphone, sans connexion");
+            return;
+        }
+
+        boolean rain = tab == TAB_RAIN;
+        String[] values = new String[days.size()];
+        for (int i = 0; i < values.length; i++) {
+            Series s = rain ? days.get(i).rain : days.get(i).sun;
+            values[i] = !s.hasAny() ? "n/d" : rain ? Fmt.total(s.total()) + " mm" : Fmt.duration(s.total());
+        }
+        strip.setCells(labels, values, null, false, selected);
+
         if (forecast == null) {
             titleView.setText("Aucune donnée");
             totalView.setText("Touchez « Actualiser » (connexion requise).");
-            dayView.setDay(null, 2, -1);
-            strip.setDays(null, 0);
-            return;
-        }
-        days = forecast.window();
-        selected = Math.max(0, Math.min(days.size() - 1, selected));
-
-        // Échelle commune à toute la semaine pour comparer les jours (barre pleine ≥ 2 mm/h).
-        double scale = 2;
-        for (Day d : days) scale = Math.max(scale, d.max());
-
-        Day d = days.get(selected);
-        titleView.setText(Fmt.title(selected, d.date));
-        if (!d.hasAny()) {
-            totalView.setText("Pas de données pour ce jour");
+            dayView.setSeries(null, 1, 0, null, null, -1);
         } else {
-            String t = "Total " + Fmt.total(d.total()) + " mm";
-            if (d.max() >= 0.05) t += "  ·  max " + Fmt.mm(d.max()) + " mm/h";
-            if (!d.isComplete()) t += "  (partiel)";
-            totalView.setText(t);
+            titleView.setText(Fmt.title(selected, d.date));
+            int hour = selected == 1 ? forecast.currentHour() : -1;
+            if (rain) renderRain(d, hour);
+            else renderSun(d, hour, zone);
         }
-        strip.setDays(days, selected);
-        dayView.setDay(d, scale, selected == 1 ? forecast.currentHour() : -1);
 
         if (!loading) {
             long f = prefs.getLong("fetched", 0);
             String when = f == 0 ? "?" : new SimpleDateFormat("dd/MM HH:mm", Locale.FRENCH).format(new Date(f));
-            statusView.setText("Mis à jour " + when + "  ·  « 07h » = de 7 h à 8 h  ·  Open-Meteo");
+            String legend = rain ? "« 07h » = de 7 h à 8 h" : "minutes de soleil / heure";
+            statusView.setText("Màj " + when + " · " + legend + " · Open-Meteo");
         }
+    }
+
+    private void renderRain(Day d, int hour) {
+        Series s = d.rain;
+        // Échelle commune à toute la semaine pour comparer les jours (barre pleine ≥ 2 mm/h).
+        double scale = 2;
+        for (Day x : days) scale = Math.max(scale, x.rain.max());
+        if (!s.hasAny()) {
+            totalView.setText("Pas de données pour ce jour");
+        } else {
+            String t = "Total " + Fmt.total(s.total()) + " mm";
+            if (s.max() >= 0.05) t += "  ·  max " + Fmt.mm(s.max()) + " mm/h";
+            if (!s.isComplete()) t += "  (partiel)";
+            totalView.setText(t);
+        }
+        dayView.setSeries(s, scale, 0.05, Fmt::mm, null, hour);
+    }
+
+    private void renderSun(Day d, int hour, ZoneId zone) {
+        Series s = d.sun;
+        Sun sun = Sun.of(d.date, lat(), lon(), zone);
+        boolean[] night = new boolean[24];
+        for (int h = 0; h < 24; h++) {
+            Instant start = d.date.atTime(h, 0).atZone(zone).toInstant();
+            night[h] = sun.isNight(start, start.plusSeconds(3600));
+        }
+        if (!s.hasAny()) {
+            totalView.setText(forecast.hasSun ? "Pas de données pour ce jour" : "Touchez « Actualiser » pour l'ensoleillement");
+        } else {
+            String t = "Soleil " + Fmt.duration(s.total()) + " sur " + Fmt.duration(sun.dayMinutes()) + " de jour";
+            if (!s.isComplete()) t += "  (partiel)";
+            totalView.setText(t);
+        }
+        // Barre pleine = 60 minutes de soleil dans l'heure. Les heures de nuit restent vides.
+        dayView.setSeries(s, 60, 0.5, Fmt::minutes, night, hour);
+    }
+
+    private void renderEphemeris(Day d, LocalDate today, ZoneId zone, String[] labels) {
+        boolean south = lat() < 0;
+
+        // Bandeau : la lune de chaque jour, vers 22 h.
+        double[] moons = new double[days.size()];
+        for (int i = 0; i < moons.length; i++) {
+            moons[i] = MoonPhase.at(days.get(i).date.atTime(22, 0).atZone(zone).toInstant()).elong;
+        }
+        strip.setCells(labels, null, moons, south, selected);
+
+        saintView.setText(Saints.of(d.date));
+        String feast = Saints.feast(d.date);
+        feastView.setText(feast == null ? "" : feast);
+        feastView.setVisibility(feast == null ? View.GONE : View.VISIBLE);
+
+        Sun sun = Sun.of(d.date, lat(), lon(), zone);
+        if (sun.state == Sun.NORMAL) {
+            riseView.setText(Fmt.clock(sun.rise));
+            setView.setText(Fmt.clock(sun.set));
+            long diff = Math.round(sun.dayMinutes()) - Math.round(Sun.of(d.date.minusDays(1), lat(), lon(), zone).dayMinutes());
+            String sign = diff > 0 ? "+" : diff < 0 ? "−" : "±";
+            dayLengthView.setText("Durée du jour " + Fmt.duration(sun.dayMinutes())
+                    + "  (" + sign + Math.abs(diff) + " min sur la veille)");
+        } else {
+            riseView.setText("—");
+            setView.setText("—");
+            dayLengthView.setText(sun.state == Sun.ALWAYS_UP ? "Soleil levé toute la journée" : "Le soleil ne se lève pas");
+        }
+
+        // Lune : maintenant pour aujourd'hui, 22 h pour les autres jours.
+        Instant ref = d.date.equals(today) ? Instant.now() : d.date.atTime(22, 0).atZone(zone).toInstant();
+        MoonPhase.Info info = MoonPhase.at(ref);
+        MoonPhase.Event event = MoonPhase.onDay(d.date, zone);
+        moonView.setPhase(info.elong, south);
+        phaseView.setText(event != null ? MoonPhase.MAIN[event.type] : MoonPhase.name(info.elong));
+        String moonInfo = "Éclairée à " + Math.round(info.illum * 100) + " %";
+        if (event != null) moonInfo = "Exacte à " + Fmt.clock(event.t.atZone(zone)) + "\n" + moonInfo;
+        else moonInfo += "\nÂge : " + Math.round(info.age) + (Math.round(info.age) > 1 ? " jours" : " jour");
+        moonInfoView.setText(moonInfo);
+
+        StringBuilder next = new StringBuilder();
+        Instant from = d.date.plusDays(1).atStartOfDay(zone).toInstant();
+        for (MoonPhase.Event e : MoonPhase.after(from, 3)) {
+            if (next.length() > 0) next.append('\n');
+            next.append(MoonPhase.MAIN[e.type]).append(" : ").append(Fmt.weekdayShort(e.t.atZone(zone).toLocalDate()));
+        }
+        nextPhasesView.setText(next);
     }
 
     // ---------------------------------------------------------------- données
@@ -224,7 +446,7 @@ public class MainActivity extends Activity {
         statusView.setText("Mise à jour…");
         final String url = String.format(Locale.US,
                 "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
-                        + "&hourly=precipitation&past_days=1&forecast_days=8&timezone=auto",
+                        + "&hourly=precipitation,sunshine_duration&past_days=1&forecast_days=8&timezone=auto",
                 lat(), lon());
         io.execute(() -> {
             try {

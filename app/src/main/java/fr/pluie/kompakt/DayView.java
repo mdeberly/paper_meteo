@@ -10,11 +10,17 @@ import android.view.View;
 /**
  * Les 24 créneaux d'une journée sur un seul écran, sans défilement :
  * 2 colonnes de 12 lignes (0h–11h à gauche, 12h–23h à droite).
+ * Sert pour la pluie (mm) comme pour l'ensoleillement (minutes).
  * Noir et blanc pur pour l'E Ink ; le créneau en cours est inversé.
  */
 public class DayView extends View {
-    private Day day;
-    private double scale = 2;
+    /** Mise en forme d'une valeur horaire ("–" quand elle est nulle). */
+    public interface Format { String value(double v); }
+
+    private Series series;
+    private double scale = 2, min;
+    private Format format;
+    private boolean[] night;
     private int highlightHour = -1;
 
     private final Paint ink = new Paint();
@@ -32,10 +38,17 @@ public class DayView extends View {
         bold.setTextAlign(Paint.Align.RIGHT);
     }
 
-    /** @param scale cumul horaire (mm) correspondant à une barre pleine */
-    public void setDay(Day day, double scale, int highlightHour) {
-        this.day = day;
+    /**
+     * @param scale valeur horaire correspondant à une barre pleine
+     * @param min   en dessous, pas de barre (valeur considérée comme nulle)
+     * @param night créneaux de nuit, laissés vides (null : aucun)
+     */
+    public void setSeries(Series series, double scale, double min, Format format, boolean[] night, int highlightHour) {
+        this.series = series;
         this.scale = scale;
+        this.min = min;
+        this.format = format;
+        this.night = night;
         this.highlightHour = highlightHour;
         invalidate();
     }
@@ -44,7 +57,7 @@ public class DayView extends View {
     protected void onDraw(Canvas c) {
         int w = getWidth(), h = getHeight();
         c.drawColor(Color.WHITE);
-        if (day == null) return;
+        if (series == null) return;
 
         float cw = w / 2f, ch = h / 12f;
         float pad = Math.max(4, cw * 0.04f);
@@ -70,14 +83,15 @@ public class DayView extends View {
             float baseline = y0 + ch / 2f + ts * 0.36f;
             c.drawText(String.format(Fmt.FR, "%02dh", i), x0 + pad, baseline, text);
 
-            String val = day.has[i] ? Fmt.mm(day.mm[i]) : "n/d";
+            boolean dark = night != null && night[i];
+            String val = !series.has[i] ? "n/d" : dark ? "" : format.value(series.v[i]);
             c.drawText(val, x0 + cw - pad, baseline, bold);
 
             // Barre proportionnelle, entre l'heure et la valeur.
             float barL = x0 + pad + ts * 1.9f;
             float barR = x0 + cw - pad - ts * 1.7f;
-            if (day.has[i] && day.mm[i] >= 0.05 && barR > barL) {
-                double f = Math.min(1.0, day.mm[i] / scale);
+            if (series.has[i] && !dark && series.v[i] >= min && barR > barL) {
+                double f = Math.min(1.0, series.v[i] / scale);
                 float bw = Math.max(line * 3, (float) ((barR - barL) * f));
                 float bh = ch * 0.38f;
                 c.drawRect(barL, y0 + (ch - bh) / 2f, barL + bw, y0 + (ch + bh) / 2f, ink);

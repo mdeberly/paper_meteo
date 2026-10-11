@@ -8,13 +8,16 @@ import android.graphics.Typeface;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.util.List;
-
-/** Les 8 jours (hier → J+6) en 2 lignes de 4 cases, avec le cumul de chaque jour. Toucher une case l'ouvre. */
+/**
+ * Les 8 jours (hier → J+6) en 2 lignes de 4 cases. Chaque case montre une valeur
+ * (cumul de pluie, durée d'ensoleillement) ou une petite lune. Toucher une case l'ouvre.
+ */
 public class WeekStrip extends View {
     public interface OnPick { void pick(int index); }
 
-    private List<Day> days;
+    private String[] labels, values;
+    private double[] moons;
+    private boolean south;
     private int selected;
     private OnPick listener;
 
@@ -33,8 +36,12 @@ public class WeekStrip extends View {
 
     public void setOnPick(OnPick l) { listener = l; }
 
-    public void setDays(List<Day> days, int selected) {
-        this.days = days;
+    /** @param moons élongations lunaires à dessiner à la place des valeurs (ou null) */
+    public void setCells(String[] labels, String[] values, double[] moons, boolean south, int selected) {
+        this.labels = labels;
+        this.values = values;
+        this.moons = moons;
+        this.south = south;
         this.selected = selected;
         invalidate();
     }
@@ -42,14 +49,14 @@ public class WeekStrip extends View {
     @Override
     protected void onDraw(Canvas c) {
         c.drawColor(Color.WHITE);
-        if (days == null) return;
+        if (labels == null) return;
         float w = getWidth(), h = getHeight();
         float cw = w / 4f, ch = h / 2f;
         float line = Math.max(1, h * 0.012f);
         label.setTextSize(ch * 0.32f);
         value.setTextSize(ch * 0.36f);
 
-        for (int i = 0; i < days.size() && i < 8; i++) {
+        for (int i = 0; i < labels.length && i < 8; i++) {
             float x0 = (i % 4) * cw, y0 = (i / 4) * ch;
             boolean sel = i == selected;
             ink.setColor(Color.BLACK);
@@ -65,22 +72,25 @@ public class WeekStrip extends View {
             int fg = sel ? Color.WHITE : Color.BLACK;
             label.setColor(fg);
             value.setColor(fg);
-            Day d = days.get(i);
             float cx = x0 + cw / 2f;
-            c.drawText(Fmt.shortLabel(i, d.date), cx, y0 + ch * 0.42f, label);
-            String v = d.hasAny() ? Fmt.total(d.total()) + " mm" : "n/d";
-            c.drawText(v, cx, y0 + ch * 0.84f, value);
+            c.drawText(labels[i], cx, y0 + ch * 0.42f, label);
+            if (moons != null) {
+                float r = ch * 0.17f;
+                MoonView.draw(c, cx, y0 + ch * 0.70f, r, moons[i], south, fg, Math.max(1, r * 0.12f));
+            } else {
+                c.drawText(values[i], cx, y0 + ch * 0.84f, value);
+            }
         }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         if (e.getAction() == MotionEvent.ACTION_DOWN) return true;
-        if (e.getAction() == MotionEvent.ACTION_UP && listener != null && days != null) {
+        if (e.getAction() == MotionEvent.ACTION_UP && listener != null && labels != null) {
             int col = (int) (e.getX() / (getWidth() / 4f));
             int row = (int) (e.getY() / (getHeight() / 2f));
             int idx = Math.max(0, Math.min(3, col)) + 4 * Math.max(0, Math.min(1, row));
-            if (idx < days.size()) listener.pick(idx);
+            if (idx < labels.length) listener.pick(idx);
             performClick();
             return true;
         }

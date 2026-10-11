@@ -1,14 +1,23 @@
-# Pluie — précipitations heure par heure pour Mudita Kompakt
+# Pluie — pluie, soleil et éphéméride pour Mudita Kompakt
 
-Affiche les millimètres de pluie heure par heure pour **hier, aujourd'hui et les 6 jours suivants**.
+Trois onglets, pour **hier, aujourd'hui et les 6 jours suivants** :
 
-- Bandeau des 8 jours avec le cumul de chacun : toucher une case ouvre le jour.
+- **Pluie** : millimètres de pluie heure par heure.
+- **Soleil** : minutes d'ensoleillement heure par heure (les heures de nuit restent vides).
+- **Éphéméride** : fête du jour (calendrier français, avec Pâques, fête des mères…), lever et coucher
+  du soleil dans la ville choisie, durée du jour, phase de la Lune en toutes lettres avec la Lune dessinée,
+  et les prochaines phases.
+
+Commun aux trois onglets :
+
+- Bandeau des 8 jours (cumul de pluie, durée d'ensoleillement ou petite lune) : toucher une case ouvre le jour.
 - Les 24 heures du jour tiennent sur un seul écran (2 colonnes de 12), sans défilement.
-- Glisser à gauche / à droite sur la grille pour changer de jour.
-- L'heure en cours est inversée (blanc sur noir). « 07h » = pluie tombée entre 7 h et 8 h.
+- Glisser à gauche / à droite pour changer de jour.
+- L'heure en cours est inversée (blanc sur noir). « 07h » = de 7 h à 8 h.
 - Toucher le nom du lieu pour en chercher un autre ou utiliser la position GPS (Chauny par défaut).
-- Noir et blanc pur, aucune animation, aucun service Google. Données : Open-Meteo (gratuit, sans clé),
-  qui s'appuie sur les modèles de Météo-France pour la France. Dernières données gardées hors connexion.
+- Noir et blanc pur, aucune animation, aucun service Google. Pluie et soleil : Open-Meteo (gratuit, sans clé),
+  qui s'appuie sur les modèles de Météo-France pour la France ; dernières données gardées hors connexion.
+  Lever/coucher du soleil et phases de la Lune sont calculés sur le téléphone, sans connexion.
 
 ## Obtenir l'APK sans rien installer (GitHub)
 
