@@ -62,11 +62,13 @@ public class NextHoursView extends View {
         label.setTextSize(ts);
         value.setTextSize(ts * 1.05f);
         float icon = Math.min(cw * 0.8f, h * 0.38f);
+        // Les séparateurs s'arrêtent sous la dernière ligne de texte, pas en bas de l'écran.
+        float bottom = ts * 1.5f + icon + ts * 1.2f + ts * 1.3f + ts * 0.5f;
 
         for (int i = 0; i < n; i++) {
             Weather.Hour x = hours.get(i);
             float cx = cw * i + cw / 2f;
-            if (i > 0) c.drawRect(cw * i - line / 2, h * 0.05f, cw * i + line / 2, h * 0.95f, ink);
+            if (i > 0) c.drawRect(cw * i - line / 2, ts * 0.2f, cw * i + line / 2, Math.min(h, bottom), ink);
             c.drawText(i == 0 ? L.t("now_short") : L.hourShort(x.h), cx, ts * 1.1f, label);
             WeatherIcon.draw(c, x.kind, x.night, cx, ts * 1.5f + icon / 2f, icon, Ui.INK, Ui.BG);
             float y = ts * 1.5f + icon + ts * 1.2f;

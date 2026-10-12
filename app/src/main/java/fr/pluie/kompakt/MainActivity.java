@@ -81,6 +81,8 @@ public class MainActivity extends Activity {
     /** Bandeau des 8 jours : fixe sur l'Éphéméride, dans la zone qui défile sur Météo. */
     private WeekStrip strip, weatherStrip;
     private LinearLayout weatherView;
+    /** Météo : rappel fixe du jour choisi et du lieu, au-dessus de la zone qui défile. */
+    private TextView weatherTitle;
     private ScrollView scroll;
     private DayView dayView;
 
@@ -285,6 +287,15 @@ public class MainActivity extends Activity {
         // le tout dans une seule zone qui défile verticalement (défilement continu).
         weatherView = new LinearLayout(this);
         weatherView.setOrientation(LinearLayout.VERTICAL);
+        weatherTitle = text(17, true);
+        weatherTitle.setSingleLine(true);
+        weatherTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        weatherTitle.setPadding(0, dp(6), 0, dp(4));
+        weatherView.addView(weatherTitle);
+        View titleRule = new View(this);
+        titleRule.setBackgroundColor(Ui.LINE);
+        weatherView.addView(titleRule, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                Math.max(1, dp(Ui.LINE_DP))));
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         weatherStrip = new WeekStrip(this);
@@ -495,6 +506,7 @@ public class MainActivity extends Activity {
         }
         weatherStrip.setCells(labels, rainTotals, null, temps, dayIcons, false, selected);
 
+        weatherTitle.setText(Fmt.title(selected, d.date) + "  ·  " + prefs.getString("name", DEF_NAME));
         if (forecast == null) {
             totalView.setText(L.t("no_data"));
             dayView.setCells(null);

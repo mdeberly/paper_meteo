@@ -105,6 +105,7 @@ public class Forecast {
      * moyen, lui, baisse en proportion du temps où le soleil est caché : rapporté au direct par ciel clair
      * à cette heure et à cet endroit, il donne la part de l'heure ensoleillée (0,5 → environ 30 min).
      * Soleil trop bas (direct par ciel clair < 25 W/m²) : on garde la valeur d'Open-Meteo.
+     * La couverture nuageuse sert d'estimation complémentaire ; on retient la plus haute.
      */
     private static void estimateSunshine(Day day, ZoneId zone, double lat, double lon) {
         for (int h = 0; h < 24; h++) {
@@ -117,9 +118,14 @@ public class Forecast {
                 if (el > -0.833) daylight += 10;
             }
             if (clear < 25) continue;
-            // Un léger voile laisse passer ~80 % du direct : au-delà, on compte l'heure entière ensoleillée.
-            double fraction = Math.min(1, day.direct.v[h] / clear / 0.8);
-            day.sun.v[h] = Math.min(daylight, 60 * fraction);
+            // Au sens de l'OMM, un soleil voilé compte déjà comme ensoleillé (direct > 120 W/m²) :
+            // dès 60 % du direct par ciel clair, l'heure entière est comptée ensoleillée.
+            double byDirect = 60 * Math.min(1, day.direct.v[h] / clear / 0.6);
+            // Deuxième estimation, par la couverture nuageuse (40 % de nuages → environ 36 min de soleil).
+            double byCloud = day.cloud.has[h] ? 60 * (1 - day.cloud.v[h] / 100) : 0;
+            // On garde la plus haute des estimations, sans jamais descendre sous la valeur d'Open-Meteo.
+            double model = day.sun.has[h] ? day.sun.v[h] : 0;
+            day.sun.v[h] = Math.min(daylight, Math.max(model, Math.max(byDirect, byCloud)));
             day.sun.has[h] = true;
         }
     }
