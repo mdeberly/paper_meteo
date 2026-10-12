@@ -12,6 +12,7 @@ public class Day {
     public final Series temp = new Series();   // °C
     public final Series wind = new Series();   // vent moyen à 10 m, km/h
     public final Series windDir = new Series(); // d'où vient le vent, degrés (0 = nord, 90 = est)
+    public final Series direct = new Series(); // rayonnement solaire direct moyen de l'heure, W/m²
     /** Code temps WMO d'Open-Meteo (95 et plus = orage), -1 si inconnu. */
     public final int[] code = new int[24];
 

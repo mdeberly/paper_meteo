@@ -90,6 +90,7 @@ public class MainActivity extends Activity {
 
     private LinearLayout summaryView;
     private TextView summaryText, soonView;
+    private CurrentView currentView;
     private NextHoursView nextHoursView;
 
     // ---------------------------------------------------------------- cycle de vie
@@ -141,9 +142,11 @@ public class MainActivity extends Activity {
     static String applySettings(SharedPreferences p) {
         String lang = p.getString("lang", "auto");
         boolean f = p.getBoolean("fahrenheit", false);
+        String cal = p.getString("calendar", "auto");
         L.init(lang);
         Fmt.fahrenheit = f;
-        return lang + "/" + L.code() + "/" + f;
+        Saints.init(cal);
+        return lang + "/" + L.code() + "/" + f + "/" + Saints.country;
     }
 
     @Override
@@ -286,7 +289,9 @@ public class MainActivity extends Activity {
         content.setOrientation(LinearLayout.VERTICAL);
         weatherStrip = new WeekStrip(this);
         weatherStrip.setOnPick(i -> { selected = i; render(); });
-        content.addView(weatherStrip, stripParams());
+        LinearLayout.LayoutParams wlp = stripParams();
+        wlp.height = dp(160); // plus haute : une grande icône par jour
+        content.addView(weatherStrip, wlp);
         totalView = text(15, false);
         totalView.setPadding(0, dp(6), 0, dp(4));
         content.addView(totalView);
@@ -331,7 +336,7 @@ public class MainActivity extends Activity {
         p.setPadding(0, dp(6), 0, 0);
 
         TextView l = text(13, false);
-        l.setText(L.t("feast_label"));
+        l.setText(L.t("nameday") + " · " + new Locale("", Saints.country).getDisplayCountry(L.locale()));
         p.addView(l);
         saintView = text(24, true);
         p.addView(saintView);
@@ -372,6 +377,12 @@ public class MainActivity extends Activity {
     private LinearLayout buildSummary() {
         LinearLayout p = new LinearLayout(this);
         p.setOrientation(LinearLayout.VERTICAL);
+        // Météo actuelle, au-dessus du résumé.
+        currentView = new CurrentView(this);
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(72));
+        clp.topMargin = dp(4);
+        p.addView(currentView, clp);
+        p.addView(rule());
         summaryText = text(18, false);
         summaryText.setLineSpacing(0, 1.1f);
         summaryText.setPadding(0, dp(4), 0, 0);
@@ -477,7 +488,12 @@ public class MainActivity extends Activity {
             Day x = days.get(i);
             rainTotals[i] = x.rain.hasAny() ? Fmt.total(x.rain.total()) + " mm" : L.t("nd");
         }
-        weatherStrip.setCells(labels, rainTotals, null, temps, false, selected);
+        int[] dayIcons = new int[days.size()];
+        for (int i = 0; i < dayIcons.length; i++) {
+            dayIcons[i] = forecast == null ? Weather.NONE
+                    : Weather.dayKind(forecast, zone, lat(), lon(), days.get(i).date);
+        }
+        weatherStrip.setCells(labels, rainTotals, null, temps, dayIcons, false, selected);
 
         if (forecast == null) {
             totalView.setText(L.t("no_data"));
@@ -496,6 +512,8 @@ public class MainActivity extends Activity {
     }
 
     private void renderSummary(ZoneId zone) {
+        currentView.setCurrent(forecast == null ? null : forecast.current);
+        currentView.setVisibility(forecast != null && forecast.current != null ? View.VISIBLE : View.GONE);
         if (forecast == null) {
             summaryText.setText(L.t("no_data"));
             soonView.setText("");
@@ -586,7 +604,10 @@ public class MainActivity extends Activity {
         }
         strip.setCells(labels, null, moons, temps, south, selected);
 
-        saintView.setText(Saints.of(d.date));
+        // Fête du jour selon le pays choisi ; plusieurs prénoms : texte plus petit.
+        String names = Saints.nameDay(d.date);
+        saintView.setTextSize(TypedValue.COMPLEX_UNIT_SP, names.length() > 22 ? 18 : 24);
+        saintView.setText(names);
         String feast = Saints.feast(d.date);
         feastView.setText(feast == null ? "" : feast);
         feastView.setVisibility(feast == null ? View.GONE : View.VISIBLE);
@@ -636,7 +657,9 @@ public class MainActivity extends Activity {
         final String url = String.format(Locale.US,
                 "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
                         + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m,"
-                        + "wind_speed_10m,wind_direction_10m"
+                        + "wind_speed_10m,wind_direction_10m,direct_radiation"
+                        + "&current=temperature_2m,apparent_temperature,weather_code,cloud_cover,precipitation,"
+                        + "wind_speed_10m,wind_direction_10m,is_day"
                         + "&past_days=1&forecast_days=8&timezone=auto",
                 lat(), lon());
         io.execute(() -> {

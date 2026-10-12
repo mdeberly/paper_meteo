@@ -176,9 +176,14 @@ final class L {
                 "Błąd aktualizacji (sieć?) — poprzednie dane");
 
         // Éphéméride.
-        put("feast_label", "Fête du jour", "Name day (French calendar)", "Namenstag (franz. Kalender)",
-                "Santo del día (calendario francés)", "Onomastico (calendario francese)",
-                "Santo do dia (calendário francês)", "Imieniny (kalendarz francuski)");
+        put("nameday", "Fête du jour", "Name day", "Namenstag", "Santo del día", "Onomastico", "Santo do dia", "Imieniny");
+        put("nameday_calendar", "Calendrier des fêtes", "Name day calendar", "Namenstagskalender", "Calendario de santos",
+                "Calendario degli onomastici", "Calendário de santos", "Kalendarz imienin");
+        put("auto_country", "Automatique (pays du téléphone)", "Automatic (phone's country)", "Automatisch (Land des Telefons)",
+                "Automático (país del teléfono)", "Automatico (paese del telefono)", "Automático (país do telefone)",
+                "Automatycznie (kraj telefonu)");
+        put("feels", "Ressenti {0}", "Feels like {0}", "Gefühlt {0}", "Sensación {0}", "Percepita {0}", "Sensação {0}",
+                "Odczuwalna {0}");
         put("sunrise", "Lever du soleil", "Sunrise", "Sonnenaufgang", "Salida del sol", "Alba", "Nascer do sol", "Wschód słońca");
         put("sunset", "Coucher du soleil", "Sunset", "Sonnenuntergang", "Puesta del sol", "Tramonto", "Pôr do sol", "Zachód słońca");
         put("day_length", "Durée du jour {0}  ({1} min sur la veille)", "Day length {0}  ({1} min vs yesterday)",
@@ -255,6 +260,14 @@ final class L {
                 "Automatycznie (język telefonu)");
         put("about", "À propos", "About", "Über die App", "Acerca de", "Informazioni", "Sobre", "O aplikacji");
         put("version", "Version {0}", "Version {0}", "Version {0}", "Versión {0}", "Versione {0}", "Versão {0}", "Wersja {0}");
+        put("credits",
+                "Prévisions : Open-Meteo.com (CC BY 4.0). Fêtes PL, DE, CZ, SE, NO, DK : namedays © Filip Tammergård (MIT).",
+                "Forecasts: Open-Meteo.com (CC BY 4.0). Name days PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
+                "Vorhersagen: Open-Meteo.com (CC BY 4.0). Namenstage PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
+                "Previsiones: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
+                "Previsioni: Open-Meteo.com (CC BY 4.0). Onomastici PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
+                "Previsões: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
+                "Prognozy: Open-Meteo.com (CC BY 4.0). Imieniny PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).");
         put("about_text",
                 "Application créée par l'IA Claude sur l'idée de Maximilien DEBERLY, Chauny, FRANCE.",
                 "App created by the AI Claude from an idea by Maximilien DEBERLY, Chauny, FRANCE.",

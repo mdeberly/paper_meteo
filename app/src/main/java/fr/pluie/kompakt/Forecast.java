@@ -3,6 +3,7 @@ package fr.pluie.kompakt;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -22,6 +23,16 @@ public class Forecast {
     /** Faux pour un ancien cache enregistré avant l'ajout de l'ensoleillement, des nuages, etc. */
     public final boolean complete;
     private final Map<LocalDate, Day> byDate = new TreeMap<>();
+
+    /** Conditions actuelles (bloc « current » d'Open-Meteo), ou null. */
+    public Current current;
+
+    public static final class Current {
+        public double temp = Double.NaN, feels = Double.NaN, wind = Double.NaN, windDir = Double.NaN;
+        public double cloud = -1, precip;
+        public int code = -1;
+        public boolean day = true;
+    }
 
     private Forecast(ZoneId zone, boolean complete) {
         this.zone = zone;
@@ -45,8 +56,10 @@ public class Forecast {
         JSONArray code = hourly.optJSONArray("weather_code");
         JSONArray wind = hourly.optJSONArray("wind_speed_10m");
         JSONArray windDir = hourly.optJSONArray("wind_direction_10m");
+        JSONArray direct = hourly.optJSONArray("direct_radiation");
+        JSONObject cur = o.optJSONObject("current");
         Forecast f = new Forecast(zone, sun != null && cloud != null && temp != null && code != null
-                && wind != null && windDir != null);
+                && wind != null && windDir != null && direct != null && cur != null);
         for (int i = 0; i < times.length(); i++) {
             LocalDateTime slotStart = LocalDateTime.parse(times.getString(i)).minusHours(1);
             LocalDate d = slotStart.toLocalDate();
@@ -62,9 +75,53 @@ public class Forecast {
             put(day.temp, temp, i, h, 1);
             put(day.wind, wind, i, h, 1);
             put(day.windDir, windDir, i, h, 1);
+            put(day.direct, direct, i, h, 1);
             if (code != null && i < code.length() && !code.isNull(i)) day.code[h] = code.getInt(i);
         }
+        if (o.has("latitude") && direct != null) {
+            double lat = o.getDouble("latitude"), lon = o.getDouble("longitude");
+            for (Day day : f.byDate.values()) estimateSunshine(day, zone, lat, lon);
+        }
+        if (cur != null) {
+            Current c = new Current();
+            c.temp = cur.optDouble("temperature_2m", Double.NaN);
+            c.feels = cur.optDouble("apparent_temperature", Double.NaN);
+            c.wind = cur.optDouble("wind_speed_10m", Double.NaN);
+            c.windDir = cur.optDouble("wind_direction_10m", Double.NaN);
+            c.cloud = cur.optDouble("cloud_cover", -1);
+            c.precip = cur.optDouble("precipitation", 0);
+            c.code = cur.optInt("weather_code", -1);
+            c.day = cur.optInt("is_day", 1) == 1;
+            f.current = c;
+        }
         return f;
+    }
+
+    /**
+     * Durée d'ensoleillement estimée à partir du rayonnement direct moyen de l'heure.
+     *
+     * Open-Meteo calcule sunshine_duration en comptant le temps où le direct dépasse 120 W/m² (définition OMM),
+     * mais à chaque pas du modèle : le résultat est souvent « toute l'heure ou rien ». Le rayonnement direct
+     * moyen, lui, baisse en proportion du temps où le soleil est caché : rapporté au direct par ciel clair
+     * à cette heure et à cet endroit, il donne la part de l'heure ensoleillée (0,5 → environ 30 min).
+     * Soleil trop bas (direct par ciel clair < 25 W/m²) : on garde la valeur d'Open-Meteo.
+     */
+    private static void estimateSunshine(Day day, ZoneId zone, double lat, double lon) {
+        for (int h = 0; h < 24; h++) {
+            if (!day.direct.has[h]) continue;
+            Instant start = day.date.atTime(h, 0).atZone(zone).toInstant();
+            double clear = 0, daylight = 0;
+            for (int k = 0; k < 6; k++) {           // moyenne sur l'heure, toutes les 10 minutes
+                double el = Sun.elevation(start.plusSeconds(300 + 600L * k), lat, lon);
+                clear += Sun.clearSkyDirect(el) / 6;
+                if (el > -0.833) daylight += 10;
+            }
+            if (clear < 25) continue;
+            // Un léger voile laisse passer ~80 % du direct : au-delà, on compte l'heure entière ensoleillée.
+            double fraction = Math.min(1, day.direct.v[h] / clear / 0.8);
+            day.sun.v[h] = Math.min(daylight, 60 * fraction);
+            day.sun.has[h] = true;
+        }
     }
 
     private static void put(Series s, JSONArray a, int i, int h, double factor) throws Exception {

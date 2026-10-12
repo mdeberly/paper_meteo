@@ -78,6 +78,26 @@ final class Saints {
                     "Innocents", "David", "Roger", "Sylvestre"},
     };
 
+    /** Pays des fêtes du jour : FR (calendrier ci-dessous) ou un pays de {@link NameDays#COUNTRIES}. */
+    static String country = "FR";
+
+    /** Pays proposés dans les paramètres. */
+    static final String[] COUNTRIES = {"FR", "PL", "DE", "CZ", "SE", "NO", "DK"};
+
+    /** @param pref "auto" (pays du téléphone, sinon la France) ou un code de {@link #COUNTRIES} */
+    static void init(String pref) {
+        String c = pref == null || pref.equals("auto") ? java.util.Locale.getDefault().getCountry() : pref;
+        country = "FR";
+        for (String k : COUNTRIES) if (k.equals(c)) country = k;
+    }
+
+    /** Fête du jour selon le pays choisi, ou « — » s'il n'y en a pas. */
+    static String nameDay(LocalDate d) {
+        String s = country.equals("FR") ? of(d) : NameDays.of(country, d.getMonthValue(), d.getDayOfMonth());
+        return s == null ? "—" : s;
+    }
+
+    /** Fête du jour du calendrier français. */
     static String of(LocalDate d) {
         return BY_MONTH[d.getMonthValue() - 1][d.getDayOfMonth() - 1];
     }
@@ -92,7 +112,7 @@ final class Saints {
         long k = d.toEpochDay() - easter.toEpochDay();
         long[] offsets = {-47, -46, -7, -2, 0, 1, 39, 49, 50};
         for (int i = 0; i < offsets.length; i++) if (k == offsets[i]) return L.item("feasts", i);
-        if (!L.french()) return null;
+        if (!L.french() || !country.equals("FR")) return null;
 
         LocalDate gm = LocalDate.of(y, 3, 1).with(TemporalAdjusters.firstInMonth(DayOfWeek.SUNDAY));
         if (d.equals(gm)) return "Fête des grands-mères";

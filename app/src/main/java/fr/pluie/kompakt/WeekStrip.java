@@ -18,6 +18,7 @@ public class WeekStrip extends View {
 
     private String[] labels, values, temps;
     private double[] moons;
+    private int[] icons;
     private boolean south;
     private int selected;
     private OnPick listener;
@@ -45,6 +46,13 @@ public class WeekStrip extends View {
      * @param temps "6° / 14°" pour chaque jour
      */
     public void setCells(String[] labels, String[] values, double[] moons, String[] temps, boolean south, int selected) {
+        setCells(labels, values, moons, temps, null, south, selected);
+    }
+
+    /** @param icons icône météo de chaque jour (voir {@link Weather}), dessinée en grand, ou null */
+    public void setCells(String[] labels, String[] values, double[] moons, String[] temps, int[] icons,
+                         boolean south, int selected) {
+        this.icons = icons;
         this.labels = labels;
         this.values = values;
         this.temps = temps;
@@ -61,9 +69,10 @@ public class WeekStrip extends View {
         float w = getWidth(), h = getHeight();
         float cw = w / 4f, ch = h / 2f;
         float line = Math.max(1, h * 0.012f);
-        label.setTextSize(ch * 0.25f);
-        value.setTextSize(ch * 0.28f);
-        small.setTextSize(ch * 0.23f);
+        boolean withIcons = icons != null;
+        label.setTextSize(ch * (withIcons ? 0.17f : 0.25f));
+        value.setTextSize(ch * (withIcons ? 0.19f : 0.28f));
+        small.setTextSize(ch * (withIcons ? 0.16f : 0.23f));
 
         for (int i = 0; i < labels.length && i < 8; i++) {
             float x0 = (i % 4) * cw, y0 = (i / 4) * ch;
@@ -91,6 +100,16 @@ public class WeekStrip extends View {
             value.setColor(fg);
             small.setColor(fg);
             float cx = x0 + cw / 2f;
+            if (withIcons) {
+                // Jour, grande icône du temps de la journée, cumul de pluie, mini / maxi.
+                c.drawText(labels[i], cx, y0 + ch * 0.18f, label);
+                float size = Math.min(ch * 0.36f, cw * 0.6f);
+                int bg = sel ? Ui.ACCENT : Ui.BG;
+                WeatherIcon.draw(c, icons[i], false, cx, y0 + ch * 0.41f, size, fg, bg);
+                c.drawText(values[i], cx, y0 + ch * 0.75f, value);
+                if (temps != null) c.drawText(temps[i], cx, y0 + ch * 0.93f, small);
+                continue;
+            }
             c.drawText(labels[i], cx, y0 + ch * 0.30f, label);
             if (moons != null) {
                 float r = ch * 0.13f;

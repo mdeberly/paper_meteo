@@ -88,6 +88,39 @@ final class Weather {
         return NONE;
     }
 
+    /**
+     * Icône résumant une journée : orage s'il y en a, forte pluie (≥ 8 mm ou une heure ≥ 4 mm),
+     * pluie (≥ 1 mm), sinon le ciel moyen des heures de jour.
+     */
+    static int dayKind(Forecast f, ZoneId zone, double lat, double lon, LocalDate date) {
+        boolean any = false, storm = false;
+        double total = 0, max = 0, sum = 0;
+        int n = 0;
+        for (Hour x : hours(f, zone, lat, lon, date, 0, 24)) {
+            if (!x.has) continue;
+            any = true;
+            storm |= x.storm && x.daylight > 0;
+            total += x.mm;
+            max = Math.max(max, x.mm);
+            if (x.daylight > 0 && x.clear >= 0) {
+                sum += x.clear;
+                n++;
+            }
+        }
+        if (!any) return NONE;
+        return classify(storm, total >= 8 || max >= 4, total >= 1, n > 0 ? sum / n : -1);
+    }
+
+    /** Icône des conditions actuelles. */
+    static int currentKind(Forecast.Current c) {
+        int code = c.code;
+        boolean storm = code >= 95;
+        boolean heavy = code == 65 || code == 67 || code == 75 || code == 82 || code == 86 || c.precip >= 2.5;
+        boolean wet = c.precip >= 0.1 || (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 86);
+        double clear = c.cloud >= 0 ? 1 - c.cloud / 100 : code == 0 ? 1 : code == 1 ? 0.7 : code == 2 ? 0.4 : code == 3 ? 0 : -1;
+        return classify(storm, heavy, wet, clear);
+    }
+
     /** Icône d'un groupe d'heures (ex. 0–3h) : le temps le plus marquant, sinon le ciel moyen. */
     static int kindOf(List<Hour> hs) {
         boolean any = false, storm = false, heavy = false, wet = false;

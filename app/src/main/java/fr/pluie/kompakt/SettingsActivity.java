@@ -72,6 +72,11 @@ public class SettingsActivity extends Activity {
         root.addView(row(L.t("language"), langValue, v -> chooseLanguage()));
         root.addView(rule());
 
+        String cal = prefs.getString("calendar", "auto");
+        String calValue = cal.equals("auto") ? L.t("auto_country") + " — " + countryName(Saints.country) : countryName(cal);
+        root.addView(row(L.t("nameday_calendar"), calValue, v -> chooseCalendar()));
+        root.addView(rule());
+
         root.addView(row(L.t("about"), null, v -> showAbout()));
         root.addView(rule());
 
@@ -146,9 +151,32 @@ public class SettingsActivity extends Activity {
         }
     }
 
+    private static String countryName(String code) {
+        return new java.util.Locale("", code).getDisplayCountry(L.locale());
+    }
+
+    private void chooseCalendar() {
+        String[] items = new String[Saints.COUNTRIES.length + 1];
+        items[0] = L.t("auto_country");
+        for (int i = 0; i < Saints.COUNTRIES.length; i++) items[i + 1] = countryName(Saints.COUNTRIES[i]);
+        String cal = prefs.getString("calendar", "auto");
+        int current = 0;
+        for (int i = 0; i < Saints.COUNTRIES.length; i++) if (Saints.COUNTRIES[i].equals(cal)) current = i + 1;
+        new AlertDialog.Builder(this)
+                .setTitle(L.t("nameday_calendar"))
+                .setSingleChoiceItems(items, current, (dlg, i) -> {
+                    prefs.edit().putString("calendar", i == 0 ? "auto" : Saints.COUNTRIES[i - 1]).apply();
+                    dlg.dismiss();
+                    recreate();
+                })
+                .setNegativeButton(L.t("cancel"), null)
+                .show();
+    }
+
     private void showAbout() {
         TextView body = text(17, false);
-        body.setText(L.f("version", versionName()) + "\n\n" + L.t("about_text") + "\n\nwww.deberly.fr");
+        body.setText(L.f("version", versionName()) + "\n\n" + L.t("about_text") + "\n\nwww.deberly.fr"
+                + "\n\n" + L.t("credits"));
         body.setPadding(dp(24), dp(12), dp(24), 0);
         body.setLinkTextColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);
         Linkify.addLinks(body, Linkify.WEB_URLS);

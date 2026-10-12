@@ -62,6 +62,32 @@ final class Sun {
         return !end.isAfter(rise.toInstant()) || !start.isBefore(set.toInstant());
     }
 
+    /** Hauteur du soleil au-dessus de l'horizon, en degrés, à l'instant t (précision ≈ 0,1°). */
+    static double elevation(Instant t, double lat, double lon) {
+        double d = t.toEpochMilli() / 86400000.0 + 2440587.5 - 2451545.0;   // jours depuis J2000
+        double g = Math.toRadians(norm(357.529 + 0.98560028 * d));          // anomalie moyenne
+        double q = norm(280.459 + 0.98564736 * d);                          // longitude moyenne
+        double l = Math.toRadians(q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g));
+        double e = Math.toRadians(23.439 - 0.00000036 * d);                 // obliquité
+        double ra = Math.atan2(Math.cos(e) * Math.sin(l), Math.cos(l));
+        double dec = Math.asin(Math.sin(e) * Math.sin(l));
+        double gmst = norm(280.46061837 + 360.98564736629 * d);             // temps sidéral, degrés
+        double ha = Math.toRadians(gmst + lon) - ra;                        // angle horaire
+        double phi = Math.toRadians(lat);
+        return Math.toDegrees(Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha)));
+    }
+
+    /**
+     * Rayonnement direct reçu sur une surface horizontale par ciel parfaitement clair (W/m²),
+     * modèle de Meinel avec la masse d'air de Kasten et Young.
+     */
+    static double clearSkyDirect(double elevationDeg) {
+        if (elevationDeg <= 0) return 0;
+        double am = 1 / (Math.sin(Math.toRadians(elevationDeg)) + 0.50572 * Math.pow(elevationDeg + 6.07995, -1.6364));
+        double dni = 1361 * Math.pow(0.7, Math.pow(am, 0.678));
+        return dni * Math.sin(Math.toRadians(elevationDeg));
+    }
+
     private static ZonedDateTime at(double jd, ZoneId zone) {
         return Instant.ofEpochMilli(Math.round((jd - 2440587.5) * 86400000.0)).atZone(zone);
     }
