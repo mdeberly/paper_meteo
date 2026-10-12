@@ -85,12 +85,12 @@ public class DayView extends View {
             text.setTextSize(sp(12));
             text.setTextAlign(Paint.Align.RIGHT);
             float y1 = getHeight() * 0.45f, y2 = getHeight() * 0.85f;
-            title(c, "Soleil", "min", w * SUN, y1, y2);
-            title(c, "Pluie", "mm", w * RAIN, y1, y2);
-            title(c, "Temp.", "°C", w * TEMP, y1, y2);
-            title(c, "Vent", "km/h", w * WIND, y1, y2);
+            title(c, L.t("col_sun"), "min", w * SUN, y1, y2);
+            title(c, L.t("col_rain"), "mm", w * RAIN, y1, y2);
+            title(c, L.t("col_temp"), Fmt.unit(), w * TEMP, y1, y2);
+            title(c, L.t("col_wind"), "km/h", w * WIND, y1, y2);
             text.setTextAlign(Paint.Align.LEFT);
-            c.drawText("Heure", pad, y2, text);
+            c.drawText(L.t("col_hour"), pad, y2, text);
             ink.setColor(Color.BLACK);
             c.drawRect(0, getHeight() - px(2), w, getHeight(), ink);
             return;

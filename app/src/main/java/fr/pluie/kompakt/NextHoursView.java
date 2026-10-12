@@ -66,11 +66,11 @@ public class NextHoursView extends View {
             Weather.Hour x = hours.get(i);
             float cx = cw * i + cw / 2f;
             if (i > 0) c.drawRect(cw * i - line / 2, h * 0.05f, cw * i + line / 2, h * 0.95f, ink);
-            c.drawText(i == 0 ? "Maint." : x.h + " h", cx, ts * 1.1f, label);
+            c.drawText(i == 0 ? L.t("now_short") : L.hourShort(x.h), cx, ts * 1.1f, label);
             WeatherIcon.draw(c, x.kind, x.night, cx, ts * 1.5f + icon / 2f, icon, Color.BLACK, Color.WHITE);
             float y = ts * 1.5f + icon + ts * 1.2f;
-            c.drawText(Double.isNaN(x.temp) ? "" : Math.round(x.temp) + "°", cx, y, value);
-            c.drawText(!x.has ? "n/d" : x.mm >= 0.05 ? Fmt.mm(x.mm) + " mm" : "–", cx, y + ts * 1.3f, label);
+            c.drawText(Double.isNaN(x.temp) ? "" : Fmt.deg(x.temp), cx, y, value);
+            c.drawText(!x.has ? L.t("nd") : x.mm >= 0.05 ? Fmt.mm(x.mm) + " mm" : "–", cx, y + ts * 1.3f, label);
         }
     }
 }

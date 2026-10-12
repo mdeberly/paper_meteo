@@ -14,7 +14,7 @@ public class GearView extends View {
     public GearView(Context c) {
         super(c);
         setClickable(true);
-        setContentDescription("Paramètres");
+        setContentDescription(L.t("settings"));
     }
 
     @Override

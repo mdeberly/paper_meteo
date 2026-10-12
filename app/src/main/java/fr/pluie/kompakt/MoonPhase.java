@@ -15,7 +15,11 @@ import static java.lang.Math.sin;
  */
 final class MoonPhase {
     static final int NEW = 0, FIRST = 1, FULL = 2, LAST = 3;
-    static final String[] MAIN = {"Nouvelle lune", "Premier quartier", "Pleine lune", "Dernier quartier"};
+
+    /** Nom d'une phase principale (NEW, FIRST, FULL, LAST), dans la langue choisie. */
+    static String mainName(int type) {
+        return L.item("moon_main", type);
+    }
 
     private MoonPhase() {}
 
@@ -46,10 +50,7 @@ final class MoonPhase {
 
     /** Nom en toutes lettres de la phase intermédiaire correspondant à l'élongation. */
     static String name(double elong) {
-        if (elong < 90) return "Premier croissant";
-        if (elong < 180) return "Lune gibbeuse croissante";
-        if (elong < 270) return "Lune gibbeuse décroissante";
-        return "Dernier croissant";
+        return L.item("moon_between", Math.min(3, (int) (elong / 90)));
     }
 
     /** État de la Lune à l'instant t. */

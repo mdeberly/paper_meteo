@@ -2,6 +2,7 @@ package fr.pluie.kompakt;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -9,16 +10,16 @@ import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Paramètres : pour l'instant, seulement « À propos ». */
+/** Paramètres : unité de température, langue, à propos. */
 public class SettingsActivity extends Activity {
 
-    private static final String ABOUT = "Application créée par l'IA Claude sur l'idée de Maximilien DEBERLY, "
-            + "Chauny, FRANCE.\n\nwww.deberly.fr";
+    private SharedPreferences prefs;
 
     private int dp(float v) {
         return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, getResources().getDisplayMetrics()));
@@ -35,6 +36,9 @@ public class SettingsActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        prefs = getSharedPreferences("pluie", MODE_PRIVATE);
+        MainActivity.applySettings(prefs);
+
         FrameLayout frame = new FrameLayout(this);
         frame.setBackgroundColor(Color.WHITE);
         frame.setFitsSystemWindows(true);
@@ -52,32 +56,89 @@ public class SettingsActivity extends Activity {
         back.setOnClickListener(v -> finish());
         top.addView(back);
         TextView title = text(20, true);
-        title.setText("Paramètres");
+        title.setText(L.t("settings"));
         top.addView(title);
+        top.setOnClickListener(v -> finish());
         root.addView(top, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
         root.addView(rule());
 
-        TextView about = text(18, false);
-        about.setText("À propos");
-        about.setGravity(Gravity.CENTER_VERTICAL);
-        about.setPadding(dp(4), 0, dp(4), 0);
-        about.setOnClickListener(v -> showAbout());
-        root.addView(about, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(56)));
+        boolean f = prefs.getBoolean("fahrenheit", false);
+        root.addView(row(L.t("temp_unit"), f ? "Fahrenheit (°F)" : "Celsius (°C)", v -> chooseUnit()));
+        root.addView(rule());
+
+        String lang = prefs.getString("lang", "auto");
+        String langValue = L.t("auto_lang") + " — " + L.NAMES[L.lang()];
+        for (int i = 0; i < L.CODES.length; i++) if (L.CODES[i].equals(lang)) langValue = L.NAMES[i];
+        root.addView(row(L.t("language"), langValue, v -> chooseLanguage()));
+        root.addView(rule());
+
+        root.addView(row(L.t("about"), null, v -> showAbout()));
         root.addView(rule());
 
         setContentView(frame);
     }
 
-    private android.view.View rule() {
-        android.view.View v = new android.view.View(this);
+    /** Une ligne touchable : intitulé, et valeur en dessous. */
+    private View row(String label, String value, View.OnClickListener click) {
+        LinearLayout r = new LinearLayout(this);
+        r.setOrientation(LinearLayout.VERTICAL);
+        r.setGravity(Gravity.CENTER_VERTICAL);
+        r.setPadding(dp(4), dp(10), dp(4), dp(10));
+        r.setMinimumHeight(dp(56));
+        TextView l = text(18, false);
+        l.setText(label);
+        r.addView(l);
+        if (value != null) {
+            TextView v = text(15, true);
+            v.setText(value);
+            r.addView(v);
+        }
+        r.setOnClickListener(click);
+        return r;
+    }
+
+    private View rule() {
+        View v = new View(this);
         v.setBackgroundColor(Color.BLACK);
         v.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2)));
         return v;
     }
 
+    private void chooseUnit() {
+        String[] items = {"Celsius (°C)", "Fahrenheit (°F)"};
+        int current = prefs.getBoolean("fahrenheit", false) ? 1 : 0;
+        new AlertDialog.Builder(this)
+                .setTitle(L.t("temp_unit"))
+                .setSingleChoiceItems(items, current, (dlg, i) -> {
+                    prefs.edit().putBoolean("fahrenheit", i == 1).apply();
+                    dlg.dismiss();
+                    recreate();
+                })
+                .setNegativeButton(L.t("cancel"), null)
+                .show();
+    }
+
+    private void chooseLanguage() {
+        String[] items = new String[L.CODES.length + 1];
+        items[0] = L.t("auto_lang");
+        System.arraycopy(L.NAMES, 0, items, 1, L.NAMES.length);
+        String lang = prefs.getString("lang", "auto");
+        int current = 0;
+        for (int i = 0; i < L.CODES.length; i++) if (L.CODES[i].equals(lang)) current = i + 1;
+        new AlertDialog.Builder(this)
+                .setTitle(L.t("language"))
+                .setSingleChoiceItems(items, current, (dlg, i) -> {
+                    prefs.edit().putString("lang", i == 0 ? "auto" : L.CODES[i - 1]).apply();
+                    dlg.dismiss();
+                    recreate(); // les textes de cet écran passent dans la nouvelle langue
+                })
+                .setNegativeButton(L.t("cancel"), null)
+                .show();
+    }
+
     private void showAbout() {
         TextView body = text(17, false);
-        body.setText(ABOUT);
+        body.setText(L.t("about_text") + "\n\nwww.deberly.fr");
         body.setPadding(dp(24), dp(12), dp(24), 0);
         body.setLinkTextColor(Color.BLACK);
         Linkify.addLinks(body, Linkify.WEB_URLS);

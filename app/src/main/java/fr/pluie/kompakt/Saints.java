@@ -82,20 +82,17 @@ final class Saints {
         return BY_MONTH[d.getMonthValue() - 1][d.getDayOfMonth() - 1];
     }
 
-    /** Fête mobile ou événement du jour (Pâques, fête des mères…), ou null. */
+    /**
+     * Fête mobile ou événement du jour (Pâques, fête des mères…), ou null.
+     * Les fêtes religieuses sont traduites ; les fêtes propres à la France n'apparaissent qu'en français.
+     */
     static String feast(LocalDate d) {
         int y = d.getYear();
         LocalDate easter = easter(y);
         long k = d.toEpochDay() - easter.toEpochDay();
-        if (k == -47) return "Mardi gras";
-        if (k == -46) return "Mercredi des Cendres";
-        if (k == -7) return "Rameaux";
-        if (k == -2) return "Vendredi saint";
-        if (k == 0) return "Pâques";
-        if (k == 1) return "Lundi de Pâques";
-        if (k == 39) return "Ascension";
-        if (k == 49) return "Pentecôte";
-        if (k == 50) return "Lundi de Pentecôte";
+        long[] offsets = {-47, -46, -7, -2, 0, 1, 39, 49, 50};
+        for (int i = 0; i < offsets.length; i++) if (k == offsets[i]) return L.item("feasts", i);
+        if (!L.french()) return null;
 
         LocalDate gm = LocalDate.of(y, 3, 1).with(TemporalAdjusters.firstInMonth(DayOfWeek.SUNDAY));
         if (d.equals(gm)) return "Fête des grands-mères";

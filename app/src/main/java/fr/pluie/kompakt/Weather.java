@@ -110,19 +110,15 @@ final class Weather {
 
     // ---------------------------------------------------------------- résumé écrit
 
-    private static final String[] SKY_DAY = {
-            "ciel couvert", "ciel très nuageux avec de rares éclaircies", "alternance de nuages et d'éclaircies",
-            "soleil souvent présent", "grand soleil"};
-    private static final String[] SKY_NIGHT = {
-            "ciel couvert", "ciel très nuageux", "nuages et éclaircies", "quelques nuages", "ciel dégagé"};
+    private static final int MORNING = 0, AFTERNOON = 1, EVENING = 2, NIGHT = 3, ALL_DAY = 4;
 
     private static final class Part {
-        final String label;
+        final int label;
         final List<Hour> hours;
         int sky = -1;
         boolean nightly, dry = true;
 
-        Part(String label, List<Hour> hours) {
+        Part(int label, List<Hour> hours) {
             this.label = label;
             this.hours = hours;
             double sum = 0;
@@ -152,15 +148,15 @@ final class Weather {
         int h = now.getHour();
         List<Part> parts = new ArrayList<>();
         if (h < 12) {
-            parts.add(new Part("ce matin", hours(f, zone, lat, lon, d, h, 12 - h)));
-            parts.add(new Part("cet après-midi", hours(f, zone, lat, lon, d, 12, 6)));
-            parts.add(new Part("ce soir", hours(f, zone, lat, lon, d, 18, 6)));
+            parts.add(new Part(MORNING, hours(f, zone, lat, lon, d, h, 12 - h)));
+            parts.add(new Part(AFTERNOON, hours(f, zone, lat, lon, d, 12, 6)));
+            parts.add(new Part(EVENING, hours(f, zone, lat, lon, d, 18, 6)));
         } else if (h < 17) {
-            parts.add(new Part("cet après-midi", hours(f, zone, lat, lon, d, h, 18 - h)));
+            parts.add(new Part(AFTERNOON, hours(f, zone, lat, lon, d, h, 18 - h)));
         } else if (h < 22) {
-            parts.add(new Part("ce soir", hours(f, zone, lat, lon, d, h, 24 - h)));
+            parts.add(new Part(EVENING, hours(f, zone, lat, lon, d, h, 24 - h)));
         } else {
-            parts.add(new Part("cette nuit", hours(f, zone, lat, lon, d, h, 24 + 7 - h)));
+            parts.add(new Part(NIGHT, hours(f, zone, lat, lon, d, h, 24 + 7 - h)));
         }
 
         List<String> out = new ArrayList<>();
@@ -173,14 +169,14 @@ final class Weather {
                     && parts.get(j).sky == p.sky && parts.get(j).nightly == p.nightly) j++;
             List<Hour> hs = new ArrayList<>();
             for (int k = i; k < j; k++) hs.addAll(parts.get(k).hours);
-            String label = j - i == 3 ? "toute la journée"
-                    : j - i == 2 ? parts.get(i).label + " et " + parts.get(i + 1).label
-                    : p.label;
+            String label = j - i == 3 ? L.item("parts", ALL_DAY)
+                    : j - i == 2 ? L.item("parts", parts.get(i).label) + L.t("and") + L.item("parts", parts.get(i + 1).label)
+                    : L.item("parts", p.label);
             String s = describe(label, p, hs);
             if (s != null) out.add(s);
             i = j;
         }
-        if (out.isEmpty()) out.add("Pas de prévision disponible pour les heures à venir.");
+        if (out.isEmpty()) out.add(L.t("no_forecast"));
         return out;
     }
 
@@ -189,8 +185,8 @@ final class Weather {
         for (Hour x : hs) any |= x.has;
         if (!any || p.sky < 0) return null;
 
-        StringBuilder s = new StringBuilder(Fmt.cap(label)).append(" : ");
-        s.append((p.nightly ? SKY_NIGHT : SKY_DAY)[p.sky]).append(", ").append(rain(hs));
+        StringBuilder s = new StringBuilder(Fmt.cap(label)).append(L.colon());
+        s.append(L.item(p.nightly ? "sky_night" : "sky_day", p.sky)).append(", ").append(rain(hs));
 
         double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
         for (Hour x : hs) {
@@ -199,25 +195,19 @@ final class Weather {
             max = Math.max(max, x.temp);
         }
         if (min <= max) {
-            long lo = Math.round(min), hi = Math.round(max);
-            s.append(lo == hi ? ", autour de " + lo + "\u00a0°C" : ", de " + lo + " à " + hi + "\u00a0°C");
+            long lo = Fmt.temp(min), hi = Fmt.temp(max);
+            s.append(lo == hi ? L.f("temp_around", Fmt.degUnit(min)) : L.f("temp_range", lo, Fmt.degUnit(max)));
         }
         double wind = 0;
         for (Hour x : hs) if (x.wind > wind) wind = x.wind;
-        if (wind >= 40) s.append(", vent fort jusqu'à ").append(Math.round(wind)).append("\u00a0km/h");
+        if (wind >= 40) s.append(L.f("strong_wind", Math.round(wind)));
         return s.append('.').toString();
-    }
-
-    /** "15 h", "midi", "minuit". */
-    static String hourName(int h) {
-        h %= 24;
-        return h == 0 ? "minuit" : h == 12 ? "midi" : h + "\u00a0h";
     }
 
     /** " vers 15 h" ou " entre 14 h et 16 h" pour les heures first..last de hs. */
     private static String when(List<Hour> hs, int first, int last) {
-        return first == last ? " vers " + hourName(hs.get(first).h)
-                : " entre " + hourName(hs.get(first).h) + " et " + hourName(hs.get(last).h + 1);
+        return first == last ? L.f("at", L.hour(hs.get(first).h))
+                : L.f("between", L.hour(hs.get(first).h), L.hour(hs.get(last).h + 1));
     }
 
     /** "temps sec", "pluie faible entre 14 h et 16 h (1,2 mm)"… */
@@ -237,35 +227,35 @@ final class Weather {
                 lastStorm = i;
             }
         }
-        if (wet == 0) return "temps sec";
+        if (wet == 0) return L.t("dry");
 
         String when = wet < hs.size() * 0.75 ? when(hs, first, last) : "";
         String amount = total >= 0.5 ? " (" + Fmt.total(total) + "\u00a0mm)" : "";
-        if (firstStorm >= 0) return "pluie" + when + amount + ", risque d'orage" + when(hs, firstStorm, lastStorm);
-        if (max >= 4 || total >= 10) return "fortes pluies" + when + amount;
-        if (total < 0.5) return "quelques gouttes possibles" + when;
-        if (max < 1) return "pluie faible" + when + amount;
-        return "pluie" + when + amount;
+        if (firstStorm >= 0) return L.t("rain") + when + amount + L.t("storm") + when(hs, firstStorm, lastStorm);
+        if (max >= 4 || total >= 10) return L.t("heavy_rain") + when + amount;
+        if (total < 0.5) return L.t("drops") + when;
+        if (max < 1) return L.t("light_rain") + when + amount;
+        return L.t("rain") + when + amount;
     }
 
     /** Une phrase sur la pluie d'ici deux heures (créneau en cours + suivant). */
     static String nextTwoHours(Forecast f, ZoneId zone, double lat, double lon, LocalDateTime now) {
         List<Hour> hs = hours(f, zone, lat, lon, now.toLocalDate(), now.getHour(), 2);
         Hour a = hs.get(0), b = hs.get(1);
-        if (!a.has || !b.has) return "Pas de prévision de pluie disponible.";
-        String until = hourName(now.getHour() + 2);
-        String next = hourName(b.h);
-        if (!a.wet && !b.wet) return "Pas de pluie prévue.";
+        if (!a.has || !b.has) return L.t("n2_nodata");
+        String until = L.hour(now.getHour() + 2);
+        String next = L.hour(b.h);
+        if (!a.wet && !b.wet) return L.t("n2_dry");
         if (a.wet && b.wet) {
             double mm = a.mm + b.mm;
-            if (a.storm || b.storm) return "Risque d'orage en ce moment, jusqu'à au moins " + until + ".";
-            if (mm < 0.5) return "Quelques gouttes sont possibles en ce moment, jusqu'à au moins " + until + ".";
-            return "De la pluie est prévue en ce moment, jusqu'à au moins " + until + " (" + Fmt.total(mm) + "\u00a0mm).";
+            if (a.storm || b.storm) return L.f("n2_storm_now", until);
+            if (mm < 0.5) return L.f("n2_drops_now", until);
+            return L.f("n2_rain_now", until, Fmt.total(mm));
         }
-        if (a.wet) return "De la pluie est prévue en ce moment ; elle devrait cesser vers " + next + ".";
-        if (b.storm) return "Un orage est possible vers " + next + ".";
-        if (b.heavy) return "De fortes pluies sont attendues vers " + next + " (" + Fmt.total(b.mm) + "\u00a0mm).";
-        if (b.mm < 0.5) return "Quelques gouttes sont possibles vers " + next + ".";
-        return "De la pluie est attendue vers " + next + " (" + Fmt.total(b.mm) + "\u00a0mm).";
+        if (a.wet) return L.f("n2_stop", next);
+        if (b.storm) return L.f("n2_storm_next", next);
+        if (b.heavy) return L.f("n2_heavy_next", next, Fmt.total(b.mm));
+        if (b.mm < 0.5) return L.f("n2_drops_next", next);
+        return L.f("n2_rain_next", next, Fmt.total(b.mm));
     }
 }

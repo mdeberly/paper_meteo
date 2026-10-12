@@ -19,7 +19,9 @@ Et aussi :
   glisser franchement à gauche / à droite change aussi de jour.
 - L'heure en cours est inversée (blanc sur noir). « 07h » = de 7 h à 8 h.
 - Toucher le nom du lieu pour en chercher un autre ou utiliser la position GPS (Chauny par défaut).
-- Roue crantée en haut à droite : paramètres (À propos).
+- Roue crantée en haut à droite : paramètres — unité de température (Celsius par défaut, ou Fahrenheit),
+  langue (celle du téléphone par défaut ; français, anglais, allemand, espagnol, italien, portugais, polonais),
+  À propos.
 - Noir et blanc pur, aucun service Google. Prévisions : Open-Meteo (gratuit, sans clé),
   qui s'appuie sur les modèles de Météo-France pour la France ; dernières données gardées hors connexion.
   Lever/coucher du soleil et phases de la Lune sont calculés sur le téléphone, sans connexion.

@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
     private static final int REQ_LOC = 1;
 
     private static final int TAB_SUMMARY = 0, TAB_WEATHER = 1, TAB_EPH = 2;
-    private static final String[] TAB_NAMES = {"Résumé", "Météo", "Éphéméride"};
+    private static final String[] TAB_KEYS = {"tab_summary", "tab_weather", "tab_eph"};
 
     private SharedPreferences prefs;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -69,11 +69,15 @@ public class MainActivity extends Activity {
     private boolean loading;
     /** Vrai pendant l'affichage des paramètres : au retour, on garde l'onglet en cours. */
     private boolean inSettings;
+    /** Recréée après un changement de paramètres : on garde l'onglet en cours. */
+    private boolean restored;
+    /** Langue et unité en vigueur à la construction de l'écran. */
+    private String config;
     /** À l'arrivée sur l'onglet Météo, placer la liste sur l'heure en cours. */
     private boolean positionList;
 
     private TextView placeView, titleView, totalView, statusView;
-    private final TextView[] tabViews = new TextView[TAB_NAMES.length];
+    private final TextView[] tabViews = new TextView[TAB_KEYS.length];
     /** Bandeau des 8 jours : fixe sur l'Éphéméride, dans la zone qui défile sur Météo. */
     private WeekStrip strip, weatherStrip;
     private LinearLayout weatherView;
@@ -94,6 +98,12 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences("pluie", MODE_PRIVATE);
+        config = applySettings(prefs);
+        if (state != null) {
+            tab = state.getInt("tab", TAB_SUMMARY);
+            selected = state.getInt("selected", 1);
+            restored = true;
+        }
         buildUi();
         String cached = prefs.getString("json", null);
         if (cached != null) {
@@ -108,10 +118,32 @@ public class MainActivity extends Activity {
         // À chaque ouverture : le résumé du jour (sauf au retour des paramètres).
         if (inSettings) {
             inSettings = false;
+            // Langue ou unité changée : on reconstruit l'écran (en gardant l'onglet).
+            if (!applySettings(prefs).equals(config)) recreate();
+            return;
+        }
+        if (restored) {
+            restored = false;
             return;
         }
         tab = TAB_SUMMARY;
         selected = 1;
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle out) {
+        super.onSaveInstanceState(out);
+        out.putInt("tab", tab);
+        out.putInt("selected", selected);
+    }
+
+    /** Applique la langue et l'unité de température enregistrées ; renvoie leur combinaison. */
+    static String applySettings(SharedPreferences p) {
+        String lang = p.getString("lang", "auto");
+        boolean f = p.getBoolean("fahrenheit", false);
+        L.init(lang);
+        Fmt.fahrenheit = f;
+        return lang + "/" + L.code() + "/" + f;
     }
 
     @Override
@@ -186,7 +218,7 @@ public class MainActivity extends Activity {
         placeView.setPadding(0, dp(4), dp(8), dp(4));
         placeView.setOnClickListener(v -> chooseLocation());
         top.addView(placeView, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        TextView refresh = button("Actualiser");
+        TextView refresh = button(L.t("refresh"));
         refresh.setOnClickListener(v -> refresh());
         top.addView(refresh);
         GearView gear = new GearView(this);
@@ -206,10 +238,10 @@ public class MainActivity extends Activity {
         frameLine.setColor(Color.WHITE);
         frameLine.setStroke(dp(2), Color.BLACK);
         tabs.setBackground(frameLine);
-        for (int i = 0; i < TAB_NAMES.length; i++) {
+        for (int i = 0; i < TAB_KEYS.length; i++) {
             final int index = i;
             TextView t = text(16, true);
-            t.setText(TAB_NAMES[i]);
+            t.setText(L.t(TAB_KEYS[i]));
             t.setGravity(Gravity.CENTER);
             t.setSingleLine(true);
             t.setPadding(dp(2), 0, dp(2), 0);
@@ -296,7 +328,7 @@ public class MainActivity extends Activity {
         p.setPadding(0, dp(6), 0, 0);
 
         TextView l = text(13, false);
-        l.setText("Fête du jour");
+        l.setText(L.t("feast_label"));
         p.addView(l);
         saintView = text(24, true);
         p.addView(saintView);
@@ -308,8 +340,8 @@ public class MainActivity extends Activity {
         sun.setOrientation(LinearLayout.HORIZONTAL);
         riseView = text(22, true);
         setView = text(22, true);
-        sun.addView(labelled("Lever du soleil", riseView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        sun.addView(labelled("Coucher du soleil", setView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        sun.addView(labelled(L.t("sunrise"), riseView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        sun.addView(labelled(L.t("sunset"), setView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         p.addView(sun);
         dayLengthView = text(15, false);
         p.addView(dayLengthView);
@@ -343,7 +375,7 @@ public class MainActivity extends Activity {
         p.addView(summaryText);
         p.addView(rule());
         TextView l = text(13, false);
-        l.setText("Dans les 2 prochaines heures");
+        l.setText(L.t("next2h"));
         p.addView(l);
         soonView = text(18, true);
         p.addView(soonView);
@@ -411,7 +443,7 @@ public class MainActivity extends Activity {
         String[] temps = new String[days.size()];
         for (int i = 0; i < temps.length; i++) {
             Series t = days.get(i).temp;
-            temps[i] = t.hasAny() ? Math.round(t.low()) + "° / " + Math.round(t.high()) + "°" : "";
+            temps[i] = t.hasAny() ? Fmt.deg(t.low()) + " / " + Fmt.deg(t.high()) : "";
         }
 
         // Le titre n'est utile que sur le résumé : ailleurs, le bandeau montre le jour choisi.
@@ -425,36 +457,36 @@ public class MainActivity extends Activity {
 
         if (tab == TAB_EPH) {
             renderEphemeris(d, today, zone, labels, temps);
-            statusView.setText("Soleil et lune calculés sur le téléphone, sans connexion");
+            statusView.setText(L.t("eph_status"));
             return;
         }
 
         String[] rainTotals = new String[days.size()];
         for (int i = 0; i < rainTotals.length; i++) {
             Day x = days.get(i);
-            rainTotals[i] = x.rain.hasAny() ? Fmt.total(x.rain.total()) + " mm" : "n/d";
+            rainTotals[i] = x.rain.hasAny() ? Fmt.total(x.rain.total()) + " mm" : L.t("nd");
         }
         weatherStrip.setCells(labels, rainTotals, null, temps, false, selected);
 
         if (forecast == null) {
-            totalView.setText("Aucune donnée : touchez « Actualiser » (connexion requise).");
+            totalView.setText(L.t("no_data"));
             dayView.setCells(null);
         } else {
             renderWeather(d, zone);
         }
-        updateStatus("« 07h » = de 7 h à 8 h · ");
+        updateStatus(L.t("legend") + " · ");
     }
 
     private void updateStatus(String legend) {
         if (loading) return;
         long f = prefs.getLong("fetched", 0);
-        String when = f == 0 ? "?" : new SimpleDateFormat("dd/MM HH:mm", Locale.FRENCH).format(new Date(f));
-        statusView.setText("Màj " + when + " · " + legend + "Open-Meteo");
+        String when = f == 0 ? "?" : new SimpleDateFormat("dd/MM HH:mm", L.locale()).format(new Date(f));
+        statusView.setText(L.f("updated", when) + " · " + legend + "Open-Meteo");
     }
 
     private void renderSummary(ZoneId zone) {
         if (forecast == null) {
-            summaryText.setText("Aucune donnée. Touchez « Actualiser » (connexion requise).");
+            summaryText.setText(L.t("no_data"));
             soonView.setText("");
             nextHoursView.setHours(null);
             return;
@@ -473,11 +505,11 @@ public class MainActivity extends Activity {
     private void renderWeather(Day d, ZoneId zone) {
         Sun sun = Sun.of(d.date, lat(), lon(), zone);
         if (!d.rain.hasAny()) {
-            totalView.setText("Pas de données pour ce jour");
+            totalView.setText(L.t("no_day_data"));
         } else {
-            String t = "Pluie " + Fmt.total(d.rain.total()) + " mm";
-            if (d.sun.hasAny()) t += "  ·  soleil " + Fmt.duration(d.sun.total()) + " sur " + Fmt.duration(sun.dayMinutes());
-            if (!d.rain.isComplete()) t += "  (partiel)";
+            String t = L.f("day_rain", Fmt.total(d.rain.total()));
+            if (d.sun.hasAny()) t += "  ·  " + L.f("day_sun", Fmt.duration(d.sun.total()), Fmt.duration(sun.dayMinutes()));
+            if (!d.rain.isComplete()) t += "  " + L.t("partial");
             totalView.setText(t);
         }
 
@@ -488,7 +520,7 @@ public class MainActivity extends Activity {
         for (int[] slot : SLOTS) {
             int a = slot[0], b = slot[1];
             DayView.Cell c = new DayView.Cell();
-            c.label = b - a == 1 ? String.format(Locale.FRENCH, "%02dh", a) : a + "–" + b + "h";
+            c.label = L.slot(a, b);
             c.highlight = hour >= a && hour < b;
             if (c.highlight) current = cells.size();
             boolean hasRain = false, hasSun = false, dark = true;
@@ -511,9 +543,9 @@ public class MainActivity extends Activity {
                     }
                 }
             }
-            c.rain = hasRain ? Fmt.mm(rain) : "n/d";
-            c.sun = !hasSun ? "n/d" : dark ? "" : Fmt.minutes(sunMin);
-            if (tn > 0) c.temp = Math.round(tsum / tn) + "°";
+            c.rain = hasRain ? Fmt.mm(rain) : L.t("nd");
+            c.sun = !hasSun ? L.t("nd") : dark ? "" : Fmt.minutes(sunMin);
+            if (tn > 0) c.temp = Fmt.deg(tsum / tn);
             if (wn > 0) {
                 c.wind = String.valueOf(Math.round(wsum / wn));
                 if (wx != 0 || wy != 0) c.windDir = (Math.toDegrees(Math.atan2(wx, wy)) + 360) % 360;
@@ -554,12 +586,11 @@ public class MainActivity extends Activity {
             setView.setText(Fmt.clock(sun.set));
             long diff = Math.round(sun.dayMinutes()) - Math.round(Sun.of(d.date.minusDays(1), lat(), lon(), zone).dayMinutes());
             String sign = diff > 0 ? "+" : diff < 0 ? "−" : "±";
-            dayLengthView.setText("Durée du jour " + Fmt.duration(sun.dayMinutes())
-                    + "  (" + sign + Math.abs(diff) + " min sur la veille)");
+            dayLengthView.setText(L.f("day_length", Fmt.duration(sun.dayMinutes()), sign + Math.abs(diff)));
         } else {
             riseView.setText("—");
             setView.setText("—");
-            dayLengthView.setText(sun.state == Sun.ALWAYS_UP ? "Soleil levé toute la journée" : "Le soleil ne se lève pas");
+            dayLengthView.setText(L.t(sun.state == Sun.ALWAYS_UP ? "sun_up" : "sun_down"));
         }
 
         // Lune : maintenant pour aujourd'hui, 22 h pour les autres jours.
@@ -567,17 +598,17 @@ public class MainActivity extends Activity {
         MoonPhase.Info info = MoonPhase.at(ref);
         MoonPhase.Event event = MoonPhase.onDay(d.date, zone);
         moonView.setPhase(info.elong, south);
-        phaseView.setText(event != null ? MoonPhase.MAIN[event.type] : MoonPhase.name(info.elong));
-        String moonInfo = "Éclairée à " + Math.round(info.illum * 100) + " %";
-        if (event != null) moonInfo = "Exacte à " + Fmt.clock(event.t.atZone(zone)) + "\n" + moonInfo;
-        else moonInfo += "\nÂge : " + Math.round(info.age) + (Math.round(info.age) > 1 ? " jours" : " jour");
+        phaseView.setText(event != null ? MoonPhase.mainName(event.type) : MoonPhase.name(info.elong));
+        String moonInfo = L.f("moon_lit", Math.round(info.illum * 100));
+        if (event != null) moonInfo = L.f("moon_exact", Fmt.clock(event.t.atZone(zone))) + "\n" + moonInfo;
+        else moonInfo += "\n" + L.f("moon_age", L.days(Math.round(info.age)));
         moonInfoView.setText(moonInfo);
 
         StringBuilder next = new StringBuilder();
         Instant from = d.date.plusDays(1).atStartOfDay(zone).toInstant();
         for (MoonPhase.Event e : MoonPhase.after(from, 3)) {
             if (next.length() > 0) next.append('\n');
-            next.append(MoonPhase.MAIN[e.type]).append(" : ").append(Fmt.weekdayShort(e.t.atZone(zone).toLocalDate()));
+            next.append(MoonPhase.mainName(e.type)).append(L.colon()).append(Fmt.weekdayShort(e.t.atZone(zone).toLocalDate()));
         }
         nextPhasesView.setText(next);
     }
@@ -590,7 +621,7 @@ public class MainActivity extends Activity {
     private void refresh() {
         if (loading) return;
         loading = true;
-        statusView.setText("Mise à jour…");
+        statusView.setText(L.t("updating"));
         final String url = String.format(Locale.US,
                 "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
                         + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m,"
@@ -611,7 +642,7 @@ public class MainActivity extends Activity {
                 ui.post(() -> {
                     loading = false;
                     render();
-                    statusView.setText("Échec de la mise à jour (réseau ?) — données précédentes affichées");
+                    statusView.setText(L.t("update_failed"));
                 });
             }
         });
@@ -633,7 +664,7 @@ public class MainActivity extends Activity {
 
     private void chooseLocation() {
         EditText input = new EditText(this);
-        input.setHint("Ville (ex. Chauny)");
+        input.setHint(L.t("city_hint"));
         input.setSingleLine(true);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         input.setTextColor(Color.BLACK);
@@ -642,20 +673,20 @@ public class MainActivity extends Activity {
         box.addView(input, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         new AlertDialog.Builder(this)
-                .setTitle("Lieu")
+                .setTitle(L.t("place"))
                 .setView(box)
-                .setPositiveButton("Rechercher", (dlg, w) -> searchPlace(input.getText().toString().trim()))
-                .setNeutralButton("Position GPS", (dlg, w) -> useGps())
-                .setNegativeButton("Annuler", null)
+                .setPositiveButton(L.t("search"), (dlg, w) -> searchPlace(input.getText().toString().trim()))
+                .setNeutralButton(L.t("gps"), (dlg, w) -> useGps())
+                .setNegativeButton(L.t("cancel"), null)
                 .show();
     }
 
     private void searchPlace(String q) {
         if (q.isEmpty()) return;
-        statusView.setText("Recherche de « " + q + " »…");
+        statusView.setText(L.f("searching", q));
         io.execute(() -> {
             try {
-                String url = "https://geocoding-api.open-meteo.com/v1/search?count=10&language=fr&format=json&name="
+                String url = "https://geocoding-api.open-meteo.com/v1/search?count=10&format=json&language=" + L.code() + "&name="
                         + URLEncoder.encode(q, "UTF-8");
                 JSONArray res = new JSONObject(Http.get(url)).optJSONArray("results");
                 int n = res == null ? 0 : res.length();
@@ -676,19 +707,19 @@ public class MainActivity extends Activity {
                 ui.post(() -> {
                     render();
                     if (n == 0) {
-                        Toast.makeText(this, "Aucun lieu trouvé", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, L.t("no_place"), Toast.LENGTH_SHORT).show();
                         return;
                     }
                     new AlertDialog.Builder(this)
-                            .setTitle("Choisir le lieu")
+                            .setTitle(L.t("choose_place"))
                             .setItems(labels, (dlg, i) -> setPlace(names[i], las[i], los[i]))
-                            .setNegativeButton("Annuler", null)
+                            .setNegativeButton(L.t("cancel"), null)
                             .show();
                 });
             } catch (Exception e) {
                 ui.post(() -> {
                     render();
-                    Toast.makeText(this, "Recherche impossible (réseau ?)", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, L.t("search_failed"), Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -714,11 +745,11 @@ public class MainActivity extends Activity {
         super.onRequestPermissionsResult(code, perms, results);
         if (code != REQ_LOC) return;
         if (hasLocationPermission()) locate();
-        else Toast.makeText(this, "Localisation refusée", Toast.LENGTH_SHORT).show();
+        else Toast.makeText(this, L.t("loc_denied"), Toast.LENGTH_SHORT).show();
     }
 
     private void gpsPlace(Location l) {
-        setPlace(String.format(Locale.FRENCH, "GPS %.2f ; %.2f", l.getLatitude(), l.getLongitude()),
+        setPlace(String.format(Locale.ROOT, "GPS %.2f, %.2f", l.getLatitude(), l.getLongitude()),
                 l.getLatitude(), l.getLongitude());
     }
 
@@ -743,10 +774,10 @@ public class MainActivity extends Activity {
         if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) provider = LocationManager.NETWORK_PROVIDER;
         else if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) provider = LocationManager.GPS_PROVIDER;
         else {
-            Toast.makeText(this, "Activez la localisation du téléphone", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, L.t("loc_off"), Toast.LENGTH_LONG).show();
             return;
         }
-        statusView.setText("Recherche de la position…");
+        statusView.setText(L.t("locating"));
 
         if (Build.VERSION.SDK_INT >= 30) {
             lm.getCurrentLocation(provider, null, getMainExecutor(), loc -> {
@@ -754,7 +785,7 @@ public class MainActivity extends Activity {
                 else if (fallback != null) gpsPlace(fallback);
                 else {
                     render();
-                    Toast.makeText(this, "Position introuvable", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, L.t("loc_none"), Toast.LENGTH_SHORT).show();
                 }
             });
         } else {
