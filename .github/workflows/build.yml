@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write   # pour publier une « Release » quand on pousse une étiquette v…
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,3 +28,10 @@ jobs:
         with:
           name: PaperMeteo-apk
           path: PaperMeteo.apk
+
+      # Étiquette v… (ex. v1.0-kompakt) : Release GitHub permanente avec l'APK.
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: PaperMeteo.apk
