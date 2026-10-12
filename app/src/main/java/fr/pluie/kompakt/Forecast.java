@@ -43,7 +43,10 @@ public class Forecast {
         JSONArray cloud = hourly.optJSONArray("cloud_cover");
         JSONArray temp = hourly.optJSONArray("temperature_2m");
         JSONArray code = hourly.optJSONArray("weather_code");
-        Forecast f = new Forecast(zone, sun != null && cloud != null && temp != null && code != null);
+        JSONArray wind = hourly.optJSONArray("wind_speed_10m");
+        JSONArray windDir = hourly.optJSONArray("wind_direction_10m");
+        Forecast f = new Forecast(zone, sun != null && cloud != null && temp != null && code != null
+                && wind != null && windDir != null);
         for (int i = 0; i < times.length(); i++) {
             LocalDateTime slotStart = LocalDateTime.parse(times.getString(i)).minusHours(1);
             LocalDate d = slotStart.toLocalDate();
@@ -57,6 +60,8 @@ public class Forecast {
             put(day.sun, sun, i, h, 1 / 60.0); // secondes → minutes
             put(day.cloud, cloud, i, h, 1);
             put(day.temp, temp, i, h, 1);
+            put(day.wind, wind, i, h, 1);
+            put(day.windDir, windDir, i, h, 1);
             if (code != null && i < code.length() && !code.isNull(i)) day.code[h] = code.getInt(i);
         }
         return f;

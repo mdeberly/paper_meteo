@@ -4,118 +4,158 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
+import android.util.TypedValue;
 import android.view.View;
 
 import java.util.List;
 
 /**
- * Les créneaux d'une journée sur un seul écran, sans défilement, en 2 colonnes
- * (heure par heure, la nuit regroupée en 0–3h et 3–6h).
- * Chaque case : heure, température, icône météo (facultative), barre et valeur.
+ * La journée en une seule colonne, une ligne par créneau (heure par heure, la nuit regroupée
+ * en 0–3h et 3–6h) : heure, icône météo, soleil, pluie, température, vent et sa direction.
+ * La vue prend la hauteur de toutes ses lignes et se place dans un ScrollView.
+ * En mode en-tête, elle ne dessine que les titres des colonnes (à garder fixe au-dessus).
  * Noir et blanc pur pour l'E Ink ; le créneau en cours est inversé.
  */
 public class DayView extends View {
-    /** Mise en forme d'une valeur ("–" quand elle est nulle). */
-    public interface Format { String value(double v); }
 
-    /** Une case de la grille. */
+    /** Une ligne de la liste. */
     public static final class Cell {
-        String label = "";
-        String temp = "";
-        String value = "";
-        /** Longueur de la barre, 0..1, ou négative pour ne pas en dessiner. */
-        double bar = -1;
+        String label = "", sun = "", rain = "", temp = "", wind = "";
+        /** D'où vient le vent, en degrés, ou NaN. */
+        double windDir = Double.NaN;
         int icon = Weather.NONE;
         boolean iconNight, highlight;
     }
 
-    private List<Cell> cells;
-    private boolean icons;
+    // Colonnes, en fraction de la largeur : bord droit des valeurs (alignées à droite).
+    private static final float ICON = 0.205f, SUN = 0.40f, RAIN = 0.555f, TEMP = 0.695f, WIND = 0.825f, ARROW = 0.875f;
 
-    private final Paint ink = new Paint();
+    private final boolean header;
+    private List<Cell> cells;
+
+    private final Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint bold = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    public DayView(Context c) {
+    public DayView(Context c, boolean header) {
         super(c);
+        this.header = header;
         ink.setColor(Color.BLACK);
-        ink.setStyle(Paint.Style.FILL);
         text.setColor(Color.BLACK);
         text.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         bold.setColor(Color.BLACK);
         bold.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
-        bold.setTextAlign(Paint.Align.RIGHT);
     }
 
-    /** @param icons réserver la place d'une icône météo dans chaque case */
-    public void setCells(List<Cell> cells, boolean icons) {
+    public void setCells(List<Cell> cells) {
         this.cells = cells;
-        this.icons = icons;
+        requestLayout();
         invalidate();
+    }
+
+    /** Hauteur d'une ligne, en pixels. */
+    public int rowHeight() {
+        return px(header ? 32 : 40);
+    }
+
+    private int px(float dp) {
+        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics()));
+    }
+
+    private float sp(float v) {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, v, getResources().getDisplayMetrics());
+    }
+
+    @Override
+    protected void onMeasure(int widthSpec, int heightSpec) {
+        int rows = header ? 1 : (cells == null ? 0 : cells.size());
+        setMeasuredDimension(MeasureSpec.getSize(widthSpec), rows * rowHeight());
     }
 
     @Override
     protected void onDraw(Canvas c) {
-        int w = getWidth(), h = getHeight();
+        float w = getWidth();
         c.drawColor(Color.WHITE);
-        if (cells == null || cells.isEmpty()) return;
+        float line = Math.max(1, px(1));
+        float pad = px(4);
 
-        int rows = (cells.size() + 1) / 2;
-        float cw = w / 2f, ch = (float) h / rows;
-        float pad = Math.max(4, cw * 0.035f);
-        float ts = Math.min(ch * 0.42f, cw * 0.085f);
+        if (header) {
+            text.setTextSize(sp(12));
+            text.setTextAlign(Paint.Align.RIGHT);
+            float y1 = getHeight() * 0.45f, y2 = getHeight() * 0.85f;
+            title(c, "Soleil", "min", w * SUN, y1, y2);
+            title(c, "Pluie", "mm", w * RAIN, y1, y2);
+            title(c, "Temp.", "°C", w * TEMP, y1, y2);
+            title(c, "Vent", "km/h", w * WIND, y1, y2);
+            text.setTextAlign(Paint.Align.LEFT);
+            c.drawText("Heure", pad, y2, text);
+            ink.setColor(Color.BLACK);
+            c.drawRect(0, getHeight() - px(2), w, getHeight(), ink);
+            return;
+        }
+        if (cells == null) return;
+
+        float ch = rowHeight();
+        float ts = sp(16);
         text.setTextSize(ts);
-        bold.setTextSize(ts * 1.05f);
-        float line = Math.max(1, ch * 0.03f);
-        float labelW = text.measureText("0–3h") + pad * 0.8f;
-        float tempW = bold.measureText("-10°") + pad * 0.8f;
-        float valueW = bold.measureText("0,0") + pad;
-        float iconSize = icons ? Math.min(ch * 0.82f, cw * 0.16f) : 0;
+        bold.setTextSize(ts);
+        float iconSize = ch * 0.78f;
 
         for (int i = 0; i < cells.size(); i++) {
             Cell cell = cells.get(i);
-            int col = i / rows, row = i % rows;
-            float x0 = col * cw, y0 = row * ch;
+            float y0 = i * ch;
             boolean inv = cell.highlight;
-
+            int fg = inv ? Color.WHITE : Color.BLACK, bg = inv ? Color.BLACK : Color.WHITE;
             if (inv) {
                 ink.setColor(Color.BLACK);
-                c.drawRect(x0, y0, x0 + cw, y0 + ch, ink);
+                c.drawRect(0, y0, w, y0 + ch, ink);
             }
-            int fg = inv ? Color.WHITE : Color.BLACK;
             text.setColor(fg);
             bold.setColor(fg);
-            ink.setColor(fg);
+            float base = y0 + ch / 2f + ts * 0.36f;
 
-            float baseline = y0 + ch / 2f + ts * 0.36f;
-            float x = x0 + pad;
-            c.drawText(cell.label, x, baseline, text);
-            x += labelW;
+            text.setTextAlign(Paint.Align.LEFT);
+            c.drawText(cell.label, pad, base, text);
+            WeatherIcon.draw(c, cell.icon, cell.iconNight, w * ICON, y0 + ch / 2f, iconSize, fg, bg);
+
+            text.setTextAlign(Paint.Align.RIGHT);
             bold.setTextAlign(Paint.Align.RIGHT);
-            c.drawText(cell.temp, x + tempW - pad * 0.8f, baseline, bold);
-            x += tempW;
-            if (icons) {
-                WeatherIcon.draw(c, cell.icon, cell.iconNight, x + iconSize / 2f, y0 + ch / 2f, iconSize,
-                        fg, inv ? Color.BLACK : Color.WHITE);
-                x += iconSize + pad * 0.6f;
-            }
-            c.drawText(cell.value, x0 + cw - pad, baseline, bold);
+            c.drawText(cell.sun, w * SUN, base, text);
+            c.drawText(cell.rain, w * RAIN, base, bold);
+            c.drawText(cell.temp, w * TEMP, base, bold);
+            c.drawText(cell.wind, w * WIND, base, text);
 
-            // Barre proportionnelle, entre la température (ou l'icône) et la valeur.
-            float barR = x0 + cw - pad - valueW;
-            if (cell.bar >= 0 && barR > x) {
-                float bw = Math.max(line * 3, (float) ((barR - x) * Math.min(1, cell.bar)));
-                float bh = ch * 0.34f;
-                c.drawRect(x, y0 + (ch - bh) / 2f, x + bw, y0 + (ch + bh) / 2f, ink);
+            if (!Double.isNaN(cell.windDir)) {
+                arrow(c, w * ARROW, y0 + ch / 2f, ch * 0.26f, cell.windDir, fg);
+                text.setTextAlign(Paint.Align.LEFT);
+                c.drawText(Fmt.compass(cell.windDir), w * ARROW + ch * 0.32f, base, text);
             }
 
-            // Séparateur de ligne.
             ink.setColor(Color.BLACK);
-            if (row < rows - 1 && !inv) c.drawRect(x0, y0 + ch - line, x0 + cw, y0 + ch, ink);
+            if (!inv) c.drawRect(0, y0 + ch - line, w, y0 + ch, ink);
         }
-        // Séparateur des deux colonnes.
-        ink.setColor(Color.BLACK);
-        c.drawRect(cw - line, 0, cw + line, h, ink);
+    }
+
+    private void title(Canvas c, String name, String unit, float right, float y1, float y2) {
+        c.drawText(name, right, y1, text);
+        c.drawText(unit, right, y2, text);
+    }
+
+    /** Flèche indiquant où va le vent (il vient de {@code from} degrés). */
+    private void arrow(Canvas c, float cx, float cy, float r, double from, int color) {
+        c.save();
+        c.rotate((float) from + 180, cx, cy); // 0° = flèche vers le haut (vent qui va vers le nord)
+        Path p = new Path();
+        p.moveTo(cx, cy - r);
+        p.lineTo(cx + r * 0.62f, cy + r * 0.8f);
+        p.lineTo(cx, cy + r * 0.42f);
+        p.lineTo(cx - r * 0.62f, cy + r * 0.8f);
+        p.close();
+        ink.setColor(color);
+        ink.setStyle(Paint.Style.FILL);
+        c.drawPath(p, ink);
+        c.restore();
     }
 }

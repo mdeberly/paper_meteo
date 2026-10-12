@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -26,6 +27,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -52,8 +54,8 @@ public class MainActivity extends Activity {
     private static final long STALE_MS = 30 * 60 * 1000L;
     private static final int REQ_LOC = 1;
 
-    private static final int TAB_SUMMARY = 0, TAB_RAIN = 1, TAB_SUN = 2, TAB_EPH = 3;
-    private static final String[] TAB_NAMES = {"Résumé", "Pluie", "Soleil", "Éphéméride"};
+    private static final int TAB_SUMMARY = 0, TAB_WEATHER = 1, TAB_EPH = 2;
+    private static final String[] TAB_NAMES = {"Résumé", "Météo", "Éphéméride"};
 
     private SharedPreferences prefs;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -64,10 +66,16 @@ public class MainActivity extends Activity {
     private int selected = 1; // 0 = hier, 1 = aujourd'hui
     private int tab;
     private boolean loading;
+    /** Vrai pendant l'affichage des paramètres : au retour, on garde l'onglet en cours. */
+    private boolean inSettings;
+    /** Jour affiché la dernière fois dans la liste Météo, pour ne la repositionner qu'au changement. */
+    private String shownKey;
 
     private TextView placeView, titleView, totalView, statusView;
     private final TextView[] tabViews = new TextView[TAB_NAMES.length];
     private WeekStrip strip;
+    private LinearLayout weatherView;
+    private ScrollView scroll;
     private DayView dayView;
 
     private LinearLayout ephView;
@@ -95,9 +103,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        // À chaque ouverture : le résumé du jour.
+        // À chaque ouverture : le résumé du jour (sauf au retour des paramètres).
+        if (inSettings) {
+            inSettings = false;
+            return;
+        }
         tab = TAB_SUMMARY;
         selected = 1;
+        shownKey = null;
     }
 
     @Override
@@ -175,6 +188,14 @@ public class MainActivity extends Activity {
         TextView refresh = button("Actualiser");
         refresh.setOnClickListener(v -> refresh());
         top.addView(refresh);
+        GearView gear = new GearView(this);
+        gear.setOnClickListener(v -> {
+            inSettings = true;
+            startActivity(new Intent(this, SettingsActivity.class));
+        });
+        LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(dp(40), dp(40));
+        glp.leftMargin = dp(8);
+        top.addView(gear, glp);
         root.addView(top);
 
         // Onglets.
@@ -186,7 +207,7 @@ public class MainActivity extends Activity {
         tabs.setBackground(frameLine);
         for (int i = 0; i < TAB_NAMES.length; i++) {
             final int index = i;
-            TextView t = text(15, true);
+            TextView t = text(16, true);
             t.setText(TAB_NAMES[i]);
             t.setGravity(Gravity.CENTER);
             t.setSingleLine(true);
@@ -215,21 +236,33 @@ public class MainActivity extends Activity {
         totalView.setPadding(0, dp(6), 0, dp(4));
         root.addView(totalView);
 
-        // Glisser à gauche / à droite pour changer de jour, sur tous les onglets.
+        // Glisser franchement à gauche / à droite pour changer de jour.
         GestureDetector swipe = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override public boolean onDown(MotionEvent e) { return true; }
             @Override public boolean onFling(MotionEvent a, MotionEvent b, float vx, float vy) {
-                if (Math.abs(vx) < Math.abs(vy)) return false;
+                if (Math.abs(vx) < 2 * Math.abs(vy)) return false;
                 move(vx < 0 ? 1 : -1);
                 return true;
             }
         });
         View.OnTouchListener swipeListener = (v, e) -> swipe.onTouchEvent(e);
 
-        // Grille horaire (pluie ou soleil), toute la place restante, pas de défilement.
-        dayView = new DayView(this);
-        dayView.setOnTouchListener(swipeListener);
-        root.addView(dayView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        // Météo heure par heure : en-tête fixe, puis la liste qui défile verticalement (défilement continu).
+        weatherView = new LinearLayout(this);
+        weatherView.setOrientation(LinearLayout.VERTICAL);
+        DayView header = new DayView(this, true);
+        weatherView.addView(header, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, header.rowHeight()));
+        scroll = new ScrollView(this);
+        scroll.setVerticalScrollBarEnabled(true);
+        scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        scroll.setOnTouchListener((v, e) -> {
+            swipe.onTouchEvent(e);
+            return false; // le ScrollView garde la main pour défiler
+        });
+        dayView = new DayView(this, false);
+        scroll.addView(dayView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        weatherView.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        root.addView(weatherView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         ephView = buildEphemeris();
         ephView.setOnTouchListener(swipeListener);
@@ -343,8 +376,8 @@ public class MainActivity extends Activity {
             tabViews[i].setBackgroundColor(on ? Color.BLACK : Color.TRANSPARENT);
             tabViews[i].setTextColor(on ? Color.WHITE : Color.BLACK);
         }
-        boolean grid = tab == TAB_RAIN || tab == TAB_SUN;
-        dayView.setVisibility(grid ? View.VISIBLE : View.GONE);
+        boolean grid = tab == TAB_WEATHER;
+        weatherView.setVisibility(grid ? View.VISIBLE : View.GONE);
         ephView.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
         summaryView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
         totalView.setVisibility(grid ? View.VISIBLE : View.GONE);
@@ -380,73 +413,20 @@ public class MainActivity extends Activity {
             return;
         }
 
-        boolean rain = tab == TAB_RAIN;
-        String[] values = new String[days.size()];
-        for (int i = 0; i < values.length; i++) {
-            Series s = rain ? days.get(i).rain : days.get(i).sun;
-            values[i] = !s.hasAny() ? "n/d" : rain ? Fmt.total(s.total()) + " mm" : Fmt.duration(s.total());
+        String[] rainTotals = new String[days.size()];
+        for (int i = 0; i < rainTotals.length; i++) {
+            Day x = days.get(i);
+            rainTotals[i] = x.rain.hasAny() ? Fmt.total(x.rain.total()) + " mm" : "n/d";
         }
-        strip.setCells(labels, values, null, temps, false, selected);
+        strip.setCells(labels, rainTotals, null, temps, false, selected);
 
         if (forecast == null) {
             totalView.setText("Aucune donnée : touchez « Actualiser » (connexion requise).");
-            dayView.setCells(null, false);
+            dayView.setCells(null);
         } else {
-            int hour = selected == 1 ? forecast.currentHour() : -1;
-            if (rain) renderRain(d, hour, zone);
-            else renderSun(d, hour, zone);
+            renderWeather(d, zone);
         }
-
-        updateStatus(rain ? "« 07h » = de 7 h à 8 h · " : "minutes de soleil / heure · ");
-    }
-
-    /** Créneaux de la grille : la nuit regroupée par 3 heures, puis heure par heure. */
-    private static final int[][] SLOTS = {
-            {0, 3}, {3, 6}, {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 12}, {12, 13}, {13, 14},
-            {14, 15}, {15, 16}, {16, 17}, {17, 18}, {18, 19}, {19, 20}, {20, 21}, {21, 22}, {22, 23}, {23, 24}};
-
-    /**
-     * Cases de la grille pour la pluie ou le soleil.
-     * @param scale valeur (somme sur la case) correspondant à une barre pleine
-     * @param min   en dessous, pas de barre
-     * @param sun   onglet Soleil : icônes météo, et valeur vide la nuit
-     */
-    private List<DayView.Cell> cells(Day d, Series s, double scale, double min, DayView.Format format,
-                                     boolean sun, int hour, ZoneId zone) {
-        List<Weather.Hour> hs = Weather.hours(forecast, zone, lat(), lon(), d.date, 0, 24);
-        List<DayView.Cell> out = new ArrayList<>();
-        for (int[] slot : SLOTS) {
-            int a = slot[0], b = slot[1];
-            DayView.Cell c = new DayView.Cell();
-            c.label = b - a == 1 ? String.format(Locale.FRENCH, "%02dh", a) : a + "–" + b + "h";
-            c.highlight = hour >= a && hour < b;
-            boolean has = false, dark = true;
-            int nights = 0, tn = 0;
-            double sum = 0, tsum = 0;
-            for (int h = a; h < b; h++) {
-                Weather.Hour x = hs.get(h);
-                if (s.has[h]) {
-                    has = true;
-                    sum += s.v[h];
-                }
-                if (x.daylight > 0) dark = false;
-                if (x.night) nights++;
-                if (!Double.isNaN(x.temp)) {
-                    tsum += x.temp;
-                    tn++;
-                }
-            }
-            if (tn > 0) c.temp = Math.round(tsum / tn) + "°";
-            boolean blank = sun && dark;
-            c.value = !has ? "n/d" : blank ? "" : format.value(sum);
-            if (has && !blank && sum >= min) c.bar = sum / scale;
-            if (sun) {
-                c.icon = Weather.kindOf(hs.subList(a, b));
-                c.iconNight = nights * 2 > b - a;
-            }
-            out.add(c);
-        }
-        return out;
+        updateStatus("« 07h » = de 7 h à 8 h · ");
     }
 
     private void updateStatus(String legend) {
@@ -469,34 +449,72 @@ public class MainActivity extends Activity {
         nextHoursView.setHours(Weather.hours(forecast, zone, lat(), lon(), now.toLocalDate(), now.getHour(), 6));
     }
 
-    private void renderRain(Day d, int hour, ZoneId zone) {
-        Series s = d.rain;
-        // Échelle commune à toute la semaine pour comparer les jours (barre pleine ≥ 2 mm/h).
-        double scale = 2;
-        for (Day x : days) scale = Math.max(scale, x.rain.max());
-        if (!s.hasAny()) {
+    /** Créneaux de la liste : la nuit regroupée par 3 heures, puis heure par heure. */
+    private static final int[][] SLOTS = {
+            {0, 3}, {3, 6}, {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 12}, {12, 13}, {13, 14},
+            {14, 15}, {15, 16}, {16, 17}, {17, 18}, {18, 19}, {19, 20}, {20, 21}, {21, 22}, {22, 23}, {23, 24}};
+
+    private void renderWeather(Day d, ZoneId zone) {
+        Sun sun = Sun.of(d.date, lat(), lon(), zone);
+        if (!d.rain.hasAny()) {
             totalView.setText("Pas de données pour ce jour");
         } else {
-            String t = "Total " + Fmt.total(s.total()) + " mm";
-            if (s.max() >= 0.05) t += "  ·  max " + Fmt.mm(s.max()) + " mm/h";
-            if (!s.isComplete()) t += "  (partiel)";
+            String t = "Pluie " + Fmt.total(d.rain.total()) + " mm";
+            if (d.sun.hasAny()) t += "  ·  soleil " + Fmt.duration(d.sun.total()) + " sur " + Fmt.duration(sun.dayMinutes());
+            if (!d.rain.isComplete()) t += "  (partiel)";
             totalView.setText(t);
         }
-        dayView.setCells(cells(d, s, scale, 0.05, Fmt::mm, false, hour, zone), false);
-    }
 
-    private void renderSun(Day d, int hour, ZoneId zone) {
-        Series s = d.sun;
-        Sun sun = Sun.of(d.date, lat(), lon(), zone);
-        if (!s.hasAny()) {
-            totalView.setText(forecast.complete ? "Pas de données pour ce jour" : "Touchez « Actualiser » pour l'ensoleillement");
-        } else {
-            String t = "Soleil " + Fmt.duration(s.total()) + " sur " + Fmt.duration(sun.dayMinutes()) + " de jour";
-            if (!s.isComplete()) t += "  (partiel)";
-            totalView.setText(t);
+        int hour = selected == 1 ? forecast.currentHour() : -1;
+        List<Weather.Hour> hs = Weather.hours(forecast, zone, lat(), lon(), d.date, 0, 24);
+        List<DayView.Cell> cells = new ArrayList<>();
+        int current = 0;
+        for (int[] slot : SLOTS) {
+            int a = slot[0], b = slot[1];
+            DayView.Cell c = new DayView.Cell();
+            c.label = b - a == 1 ? String.format(Locale.FRENCH, "%02dh", a) : a + "–" + b + "h";
+            c.highlight = hour >= a && hour < b;
+            if (c.highlight) current = cells.size();
+            boolean hasRain = false, hasSun = false, dark = true;
+            int nights = 0, tn = 0, wn = 0;
+            double rain = 0, sunMin = 0, tsum = 0, wsum = 0, wx = 0, wy = 0;
+            for (int h = a; h < b; h++) {
+                Weather.Hour x = hs.get(h);
+                if (d.rain.has[h]) { hasRain = true; rain += d.rain.v[h]; }
+                if (d.sun.has[h]) { hasSun = true; sunMin += d.sun.v[h]; }
+                if (x.daylight > 0) dark = false;
+                if (x.night) nights++;
+                if (!Double.isNaN(x.temp)) { tsum += x.temp; tn++; }
+                if (!Double.isNaN(x.wind)) {
+                    wsum += x.wind;
+                    wn++;
+                    if (!Double.isNaN(x.windDir)) {
+                        // Moyenne des directions par vecteurs (350° et 10° donnent 0°, pas 180°).
+                        wx += x.wind * Math.sin(Math.toRadians(x.windDir));
+                        wy += x.wind * Math.cos(Math.toRadians(x.windDir));
+                    }
+                }
+            }
+            c.rain = hasRain ? Fmt.mm(rain) : "n/d";
+            c.sun = !hasSun ? "n/d" : dark ? "" : Fmt.minutes(sunMin);
+            if (tn > 0) c.temp = Math.round(tsum / tn) + "°";
+            if (wn > 0) {
+                c.wind = String.valueOf(Math.round(wsum / wn));
+                if (wx != 0 || wy != 0) c.windDir = (Math.toDegrees(Math.atan2(wx, wy)) + 360) % 360;
+            }
+            c.icon = Weather.kindOf(hs.subList(a, b));
+            c.iconNight = nights * 2 > b - a;
+            cells.add(c);
         }
-        // Barre pleine = 60 minutes de soleil dans l'heure. Les heures de nuit restent sans valeur.
-        dayView.setCells(cells(d, s, 60, 0.5, Fmt::minutes, true, hour, zone), true);
+        dayView.setCells(cells);
+
+        // À l'ouverture d'un jour, la liste se place sur l'heure en cours (aujourd'hui) ou sur 6 h.
+        String key = d.date.toString();
+        if (!key.equals(shownKey)) {
+            shownKey = key;
+            int row = hour >= 0 ? Math.max(0, current - 1) : 2;
+            scroll.post(() -> scroll.scrollTo(0, row * dayView.rowHeight()));
+        }
     }
 
     private void renderEphemeris(Day d, LocalDate today, ZoneId zone, String[] labels, String[] temps) {
@@ -559,7 +577,8 @@ public class MainActivity extends Activity {
         statusView.setText("Mise à jour…");
         final String url = String.format(Locale.US,
                 "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
-                        + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m"
+                        + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m,"
+                        + "wind_speed_10m,wind_direction_10m"
                         + "&past_days=1&forecast_days=8&timezone=auto",
                 lat(), lon());
         io.execute(() -> {

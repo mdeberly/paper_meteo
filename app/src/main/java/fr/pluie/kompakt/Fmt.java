@@ -48,6 +48,14 @@ final class Fmt {
         return d.format(SHORT);
     }
 
+    private static final String[] COMPASS = {"N", "NE", "E", "SE", "S", "SO", "O", "NO"};
+
+    /** Direction d'où vient le vent : 225 → "SO". */
+    static String compass(double deg) {
+        int i = (int) Math.round(((deg % 360) + 360) % 360 / 45.0) % 8;
+        return COMPASS[i];
+    }
+
     static String cap(String s) {
         return s.isEmpty() ? s : s.substring(0, 1).toUpperCase(FR) + s.substring(1);
     }

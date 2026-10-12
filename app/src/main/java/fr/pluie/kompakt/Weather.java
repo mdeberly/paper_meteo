@@ -26,6 +26,7 @@ final class Weather {
         double daylight;      // minutes de jour dans le créneau
         double mm;
         double temp = Double.NaN;
+        double wind = Double.NaN, windDir = Double.NaN;
         /** 0 = couvert … 1 = dégagé, -1 si inconnu. */
         double clear = -1;
         boolean wet, heavy, storm;
@@ -56,6 +57,8 @@ final class Weather {
                 x.has = true;
                 x.mm = d.rain.v[x.h];
                 if (d.temp.has[x.h]) x.temp = d.temp.v[x.h];
+                if (d.wind.has[x.h]) x.wind = d.wind.v[x.h];
+                if (d.windDir.has[x.h]) x.windDir = d.windDir.v[x.h];
                 int code = d.code[x.h];
                 // Ensoleillement rapporté à la durée du jour dans l'heure ; la couverture nuageuse
                 // corrige le soleil bas du matin et du soir, que l'ensoleillement mesure mal.
@@ -199,6 +202,9 @@ final class Weather {
             long lo = Math.round(min), hi = Math.round(max);
             s.append(lo == hi ? ", autour de " + lo + "\u00a0°C" : ", de " + lo + " à " + hi + "\u00a0°C");
         }
+        double wind = 0;
+        for (Hour x : hs) if (x.wind > wind) wind = x.wind;
+        if (wind >= 40) s.append(", vent fort jusqu'à ").append(Math.round(wind)).append("\u00a0km/h");
         return s.append('.').toString();
     }
 
