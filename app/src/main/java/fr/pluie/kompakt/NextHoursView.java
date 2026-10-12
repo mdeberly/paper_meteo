@@ -5,11 +5,15 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.util.TypedValue;
 import android.view.View;
 
 import java.util.List;
 
-/** Les prochaines heures côte à côte : heure, icône, température, pluie. */
+/**
+ * Les prochaines heures côte à côte : heure, icône, température, pluie.
+ * Chaque heure a une largeur fixe ; la vue s'élargit d'autant et se place dans un HorizontalScrollView.
+ */
 public class NextHoursView extends View {
     private List<Weather.Hour> hours;
 
@@ -30,7 +34,19 @@ public class NextHoursView extends View {
 
     public void setHours(List<Weather.Hour> hours) {
         this.hours = hours;
+        requestLayout();
         invalidate();
+    }
+
+    /** Largeur d'une heure : 6 heures tiennent sur l'écran du Kompakt. */
+    private int columnWidth() {
+        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 51, getResources().getDisplayMetrics()));
+    }
+
+    @Override
+    protected void onMeasure(int widthSpec, int heightSpec) {
+        int n = hours == null ? 0 : hours.size();
+        setMeasuredDimension(Math.max(n * columnWidth(), MeasureSpec.getSize(widthSpec)), MeasureSpec.getSize(heightSpec));
     }
 
     @Override
@@ -39,9 +55,9 @@ public class NextHoursView extends View {
         if (hours == null || hours.isEmpty()) return;
         float w = getWidth(), h = getHeight();
         int n = hours.size();
-        float cw = w / n;
+        float cw = columnWidth();
         float line = Math.max(1, w * 0.004f);
-        float ts = Math.min(cw * 0.26f, h * 0.15f);
+        float ts = Math.min(cw * 0.26f, h * 0.12f);
         label.setTextSize(ts);
         value.setTextSize(ts * 1.05f);
         float icon = Math.min(cw * 0.8f, h * 0.38f);

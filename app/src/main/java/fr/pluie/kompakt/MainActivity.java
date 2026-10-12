@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -347,10 +348,14 @@ public class MainActivity extends Activity {
         soonView = text(18, true);
         p.addView(soonView);
         p.addView(rule());
+        // Les 12 prochaines heures, défilement horizontal continu.
         nextHoursView = new NextHoursView(this);
+        HorizontalScrollView hscroll = new HorizontalScrollView(this);
+        hscroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        hscroll.addView(nextHoursView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
         lp.topMargin = dp(2);
-        p.addView(nextHoursView, lp);
+        p.addView(hscroll, lp);
         return p;
     }
 
@@ -457,7 +462,7 @@ public class MainActivity extends Activity {
         LocalDateTime now = LocalDateTime.now(zone);
         summaryText.setText(String.join("\n", Weather.summary(forecast, zone, lat(), lon(), now)));
         soonView.setText(Weather.nextTwoHours(forecast, zone, lat(), lon(), now));
-        nextHoursView.setHours(Weather.hours(forecast, zone, lat(), lon(), now.toLocalDate(), now.getHour(), 6));
+        nextHoursView.setHours(Weather.hours(forecast, zone, lat(), lon(), now.toLocalDate(), now.getHour(), 12));
     }
 
     /** Créneaux de la liste : la nuit regroupée par 3 heures, puis heure par heure. */
