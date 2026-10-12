@@ -1,17 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Icône de la variante couleur : goutte terre cuite et petit soleil sur fond crème. -->
+<!-- Icône couleur : fond abricot pâle, soleil ambre, goutte bleue, barre terre cuite.
+     Une barre oblique à 45° coupe l'icône en deux : soleil en haut à gauche, goutte de pluie en bas à droite. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="48dp"
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
     <path
-        android:fillColor="#FBF6EF"
+        android:fillColor="#FCE7CF"
         android:pathData="M24,24m-24,0a24,24 0,1 0,48 0a24,24 0,1 0,-48 0" />
     <path
         android:fillColor="#F0A030"
-        android:pathData="M33,15m-6,0a6,6 0,1 0,12 0a6,6 0,1 0,-12 0" />
+        android:pathData="M15.0,15.0m-5.6,0a5.6,5.6 0,1 0,11.2 0a5.6,5.6 0,1 0,-11.2 0" />
     <path
-        android:fillColor="#B84E24"
-        android:pathData="M22,9C22,9 12,21.5 12,29.5a10,10 0,0 0,20 0C32,21.5 22,9 22,9z" />
+        android:strokeColor="#F0A030"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M22.40,15.00L25.40,15.00M20.23,20.23L22.35,22.35M15.00,22.40L15.00,25.40M9.77,20.23L7.65,22.35M7.60,15.00L4.60,15.00M9.77,9.77L7.65,7.65M15.00,7.60L15.00,4.60M20.23,9.77L22.35,7.65" />
+    <path
+        android:fillColor="#3D7CC9"
+        android:pathData="M32.5,21.5C32.5,21.5 26.0,29.5 26.0,34.0a6.5,6.5 0,0 0,13 0C39.0,29.5 32.5,21.5 32.5,21.5z" />
+    <path
+        android:strokeColor="#B84E24"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M8,40L40,8" />
 </vector>
