@@ -68,12 +68,13 @@ public class MainActivity extends Activity {
     private boolean loading;
     /** Vrai pendant l'affichage des paramètres : au retour, on garde l'onglet en cours. */
     private boolean inSettings;
-    /** Jour affiché la dernière fois dans la liste Météo, pour ne la repositionner qu'au changement. */
-    private String shownKey;
+    /** À l'arrivée sur l'onglet Météo, placer la liste sur l'heure en cours. */
+    private boolean positionList;
 
     private TextView placeView, titleView, totalView, statusView;
     private final TextView[] tabViews = new TextView[TAB_NAMES.length];
-    private WeekStrip strip;
+    /** Bandeau des 8 jours : fixe sur l'Éphéméride, dans la zone qui défile sur Météo. */
+    private WeekStrip strip, weatherStrip;
     private LinearLayout weatherView;
     private ScrollView scroll;
     private DayView dayView;
@@ -110,7 +111,6 @@ public class MainActivity extends Activity {
         }
         tab = TAB_SUMMARY;
         selected = 1;
-        shownKey = null;
     }
 
     @Override
@@ -221,20 +221,15 @@ public class MainActivity extends Activity {
         tlp.topMargin = dp(6);
         root.addView(tabs, tlp);
 
-        // Les 8 jours.
+        // Les 8 jours (Éphéméride).
         strip = new WeekStrip(this);
         strip.setOnPick(i -> { selected = i; render(); });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(104));
-        lp.topMargin = dp(6);
-        root.addView(strip, lp);
+        root.addView(strip, stripParams());
 
-        // Titre du jour + cumul.
+        // Titre du jour (Résumé).
         titleView = text(19, true);
         titleView.setPadding(0, dp(6), 0, 0);
         root.addView(titleView);
-        totalView = text(15, false);
-        totalView.setPadding(0, dp(6), 0, dp(4));
-        root.addView(totalView);
 
         // Glisser franchement à gauche / à droite pour changer de jour.
         GestureDetector swipe = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
@@ -247,11 +242,20 @@ public class MainActivity extends Activity {
         });
         View.OnTouchListener swipeListener = (v, e) -> swipe.onTouchEvent(e);
 
-        // Météo heure par heure : en-tête fixe, puis la liste qui défile verticalement (défilement continu).
+        // Météo : bandeau des jours, cumuls, titres des colonnes et liste heure par heure,
+        // le tout dans une seule zone qui défile verticalement (défilement continu).
         weatherView = new LinearLayout(this);
         weatherView.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        weatherStrip = new WeekStrip(this);
+        weatherStrip.setOnPick(i -> { selected = i; render(); });
+        content.addView(weatherStrip, stripParams());
+        totalView = text(15, false);
+        totalView.setPadding(0, dp(6), 0, dp(4));
+        content.addView(totalView);
         DayView header = new DayView(this, true);
-        weatherView.addView(header, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, header.rowHeight()));
+        content.addView(header, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, header.rowHeight()));
         scroll = new ScrollView(this);
         scroll.setVerticalScrollBarEnabled(true);
         scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -260,7 +264,8 @@ public class MainActivity extends Activity {
             return false; // le ScrollView garde la main pour défiler
         });
         dayView = new DayView(this, false);
-        scroll.addView(dayView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        content.addView(dayView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        scroll.addView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         weatherView.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         root.addView(weatherView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
@@ -276,6 +281,12 @@ public class MainActivity extends Activity {
         root.addView(statusView);
 
         setContentView(frame);
+    }
+
+    private LinearLayout.LayoutParams stripParams() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(104));
+        lp.topMargin = dp(6);
+        return lp;
     }
 
     private LinearLayout buildEphemeris() {
@@ -356,6 +367,7 @@ public class MainActivity extends Activity {
     private void selectTab(int i) {
         if (i == tab) return;
         tab = i;
+        positionList = tab == TAB_WEATHER;
         render();
     }
 
@@ -380,8 +392,7 @@ public class MainActivity extends Activity {
         weatherView.setVisibility(grid ? View.VISIBLE : View.GONE);
         ephView.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
         summaryView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
-        totalView.setVisibility(grid ? View.VISIBLE : View.GONE);
-        strip.setVisibility(tab == TAB_SUMMARY ? View.GONE : View.VISIBLE);
+        strip.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
 
         ZoneId zone = zone();
         LocalDate today = LocalDate.now(zone);
@@ -418,7 +429,7 @@ public class MainActivity extends Activity {
             Day x = days.get(i);
             rainTotals[i] = x.rain.hasAny() ? Fmt.total(x.rain.total()) + " mm" : "n/d";
         }
-        strip.setCells(labels, rainTotals, null, temps, false, selected);
+        weatherStrip.setCells(labels, rainTotals, null, temps, false, selected);
 
         if (forecast == null) {
             totalView.setText("Aucune donnée : touchez « Actualiser » (connexion requise).");
@@ -508,12 +519,12 @@ public class MainActivity extends Activity {
         }
         dayView.setCells(cells);
 
-        // À l'ouverture d'un jour, la liste se place sur l'heure en cours (aujourd'hui) ou sur 6 h.
-        String key = d.date.toString();
-        if (!key.equals(shownKey)) {
-            shownKey = key;
-            int row = hour >= 0 ? Math.max(0, current - 1) : 2;
-            scroll.post(() -> scroll.scrollTo(0, row * dayView.rowHeight()));
+        // En arrivant sur l'onglet, la liste se place sur l'heure en cours (aujourd'hui), sinon tout en haut.
+        // En changeant de jour, la position ne bouge pas : le bandeau touché reste sous le doigt.
+        if (positionList) {
+            positionList = false;
+            int row = Math.max(0, current - 1);
+            scroll.post(() -> scroll.scrollTo(0, hour >= 0 ? dayView.getTop() + row * dayView.rowHeight() : 0));
         }
     }
 
