@@ -136,9 +136,19 @@ public class SettingsActivity extends Activity {
                 .show();
     }
 
+    /** Numéro de version de l'application (versionName de build.gradle). */
+    private String versionName() {
+        try {
+            String v = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            return v != null ? v : "?";
+        } catch (Exception e) {
+            return "?";
+        }
+    }
+
     private void showAbout() {
         TextView body = text(17, false);
-        body.setText(L.t("about_text") + "\n\nwww.deberly.fr");
+        body.setText(L.f("version", versionName()) + "\n\n" + L.t("about_text") + "\n\nwww.deberly.fr");
         body.setPadding(dp(24), dp(12), dp(24), 0);
         body.setLinkTextColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);
         Linkify.addLinks(body, Linkify.WEB_URLS);

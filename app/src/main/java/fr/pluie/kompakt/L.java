@@ -254,6 +254,7 @@ final class L {
                 "Automático (idioma del teléfono)", "Automatica (lingua del telefono)", "Automático (idioma do telefone)",
                 "Automatycznie (język telefonu)");
         put("about", "À propos", "About", "Über die App", "Acerca de", "Informazioni", "Sobre", "O aplikacji");
+        put("version", "Version {0}", "Version {0}", "Version {0}", "Versión {0}", "Versione {0}", "Versão {0}", "Wersja {0}");
         put("about_text",
                 "Application créée par l'IA Claude sur l'idée de Maximilien DEBERLY, Chauny, FRANCE.",
                 "App created by the AI Claude from an idea by Maximilien DEBERLY, Chauny, FRANCE.",
