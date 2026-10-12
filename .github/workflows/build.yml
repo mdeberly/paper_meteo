@@ -29,9 +29,16 @@ jobs:
           name: PaperMeteo-apk
           path: PaperMeteo.apk
 
-      # Étiquette v… (ex. v1.0-kompakt) : Release GitHub permanente avec l'APK.
+      # Branche release/<nom> (ex. release/v1.0-kompakt) : étiquette <nom> et Release GitHub
+      # permanente avec l'APK, créées automatiquement sur ce commit.
+      - name: Nom de l'étiquette
+        if: startsWith(github.ref, 'refs/heads/release/')
+        run: echo "TAG=${GITHUB_REF_NAME#release/}" >> "$GITHUB_ENV"
+
       - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/heads/release/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
           files: PaperMeteo.apk
