@@ -14,6 +14,23 @@ android {
         versionName '1.0'
     }
 
+    // Deux variantes, à partir du même code :
+    //  - eink  : Mudita Kompakt et autres écrans E Ink, noir et blanc pur (identifiant d'origine,
+    //            pour que les mises à jour s'installent par-dessus) ;
+    //  - color : téléphones à écran couleur, thème clair aux tons chauds.
+    // Elles peuvent être installées côte à côte.
+    flavorDimensions 'display'
+    productFlavors {
+        eink {
+            dimension 'display'
+            applicationId 'fr.pluie.kompakt'
+        }
+        color {
+            dimension 'display'
+            applicationId 'fr.papermeteo.color'
+        }
+    }
+
     // Clé de signature fixe : chaque nouvelle version pourra s'installer par-dessus l'ancienne.
     signingConfigs {
         release {

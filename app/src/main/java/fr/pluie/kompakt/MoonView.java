@@ -26,11 +26,11 @@ public class MoonView extends View {
 
     @Override
     protected void onDraw(Canvas c) {
-        c.drawColor(Color.WHITE);
+        c.drawColor(Ui.BG);
         if (elong < 0) return;
         float stroke = Math.max(2, getWidth() * 0.015f);
         float r = Math.min(getWidth(), getHeight()) / 2f - stroke;
-        draw(c, getWidth() / 2f, getHeight() / 2f, r, elong, south, Color.BLACK, stroke);
+        draw(c, getWidth() / 2f, getHeight() / 2f, r, elong, south, Ui.MOON_EDGE, stroke);
     }
 
     /**
@@ -46,7 +46,7 @@ public class MoonView extends View {
         c.save();
         if (waxing == south) c.scale(-1, 1, cx, cy);   // éclairée à gauche
         p.setStyle(Paint.Style.FILL);
-        p.setColor(Color.BLACK);
+        p.setColor(Ui.MOON_DARK);
         c.drawCircle(cx, cy, r, p);
 
         // Partie éclairée : demi-disque droit, rogné (croissant) ou complété (gibbeuse) par le terminateur.
@@ -54,7 +54,7 @@ public class MoonView extends View {
         lit.arcTo(new RectF(cx - r, cy - r, cx + r, cy + r), -90, 180, true);
         lit.arcTo(new RectF(cx - rx, cy - r, cx + rx, cy + r), 90, e < 90 ? -180 : 180, false);
         lit.close();
-        p.setColor(Color.WHITE);
+        p.setColor(Ui.MOON_LIT);
         c.drawPath(lit, p);
         c.restore();
 

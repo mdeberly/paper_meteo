@@ -43,10 +43,10 @@ public class DayView extends View {
     public DayView(Context c, boolean header) {
         super(c);
         this.header = header;
-        ink.setColor(Color.BLACK);
-        text.setColor(Color.BLACK);
+        ink.setColor(Ui.INK);
+        text.setColor(Ui.INK);
         text.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
-        bold.setColor(Color.BLACK);
+        bold.setColor(Ui.INK);
         bold.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
     }
 
@@ -78,11 +78,12 @@ public class DayView extends View {
     @Override
     protected void onDraw(Canvas c) {
         float w = getWidth();
-        c.drawColor(Color.WHITE);
+        c.drawColor(Ui.BG);
         float line = Math.max(1, px(1));
         float pad = px(4);
 
         if (header) {
+            text.setColor(Ui.MUTED);
             text.setTextSize(sp(12));
             text.setTextAlign(Paint.Align.RIGHT);
             float y1 = getHeight() * 0.45f, y2 = getHeight() * 0.85f;
@@ -93,8 +94,8 @@ public class DayView extends View {
             title(c, L.t("col_wind"), "km/h", w * WIND, y1, y2);
             text.setTextAlign(Paint.Align.LEFT);
             c.drawText(L.t("col_hour"), pad, y2, text);
-            ink.setColor(Color.BLACK);
-            c.drawRect(0, getHeight() - px(2), w, getHeight(), ink);
+            ink.setColor(Ui.LINE);
+            c.drawRect(0, getHeight() - px(Ui.LINE_DP), w, getHeight(), ink);
             return;
         }
         if (cells == null) return;
@@ -109,9 +110,9 @@ public class DayView extends View {
             Cell cell = cells.get(i);
             float y0 = i * ch;
             boolean inv = cell.highlight;
-            int fg = inv ? Color.WHITE : Color.BLACK, bg = inv ? Color.BLACK : Color.WHITE;
+            int fg = inv ? Ui.HL_FG : Ui.INK, bg = inv ? Ui.HL_BG : Ui.BG;
             if (inv) {
-                ink.setColor(Color.BLACK);
+                ink.setColor(Ui.HL_BG);
                 c.drawRect(0, y0, w, y0 + ch, ink);
             }
             text.setColor(fg);
@@ -131,7 +132,11 @@ public class DayView extends View {
             text.setTextAlign(Paint.Align.RIGHT);
             bold.setTextAlign(Paint.Align.RIGHT);
             c.drawText(cell.sun, w * SUN, base, text);
+            // Pluie en bleu dans la variante couleur, seulement quand il y a une quantité.
+            boolean amount = !cell.rain.equals("–") && !cell.rain.equals(L.t("nd"));
+            bold.setColor(amount && (Ui.COLOR || !inv) ? Ui.RAIN_TEXT : fg);
             c.drawText(cell.rain, w * RAIN, base, bold);
+            bold.setColor(fg);
             c.drawText(cell.temp, w * TEMP, base, bold);
 
             // Vent : flèche et direction sur la moitié haute, vitesse sur la moitié basse.
@@ -150,7 +155,7 @@ public class DayView extends View {
             text.setTextAlign(Paint.Align.CENTER);
             c.drawText(cell.wind, wx, y0 + ch * 0.74f + small * 0.36f, text);
 
-            ink.setColor(Color.BLACK);
+            ink.setColor(Ui.LINE);
             if (!inv) c.drawRect(0, y0 + ch - line, w, y0 + ch, ink);
         }
     }

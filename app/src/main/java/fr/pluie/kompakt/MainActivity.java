@@ -168,7 +168,7 @@ public class MainActivity extends Activity {
 
     private TextView text(float sizeSp, boolean bold) {
         TextView t = new TextView(this);
-        t.setTextColor(Color.BLACK);
+        t.setTextColor(Ui.INK);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp);
         t.setTypeface(Typeface.create("sans-serif", bold ? Typeface.BOLD : Typeface.NORMAL));
         return t;
@@ -180,9 +180,10 @@ public class MainActivity extends Activity {
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(12), dp(8), dp(12), dp(8));
         GradientDrawable border = new GradientDrawable();
-        border.setColor(Color.WHITE);
-        border.setStroke(dp(2), Color.BLACK);
-        border.setCornerRadius(dp(6));
+        border.setColor(Ui.BG);
+        border.setStroke(dp(Ui.COLOR ? 1.5f : 2), Ui.COLOR ? Ui.ACCENT : Ui.INK);
+        border.setCornerRadius(dp(Ui.COLOR ? 18 : 6));
+        if (Ui.COLOR) b.setTextColor(Ui.ACCENT);
         b.setBackground(border);
         b.setClickable(true);
         return b;
@@ -190,8 +191,9 @@ public class MainActivity extends Activity {
 
     private View rule() {
         View v = new View(this);
-        v.setBackgroundColor(Color.BLACK);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2));
+        v.setBackgroundColor(Ui.LINE);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                Math.max(1, dp(Ui.LINE_DP)));
         lp.topMargin = dp(6);
         lp.bottomMargin = dp(4);
         v.setLayoutParams(lp);
@@ -201,7 +203,7 @@ public class MainActivity extends Activity {
     private void buildUi() {
         // Le cadre absorbe les marges système ; la marge de 8 dp reste sur le contenu.
         FrameLayout frame = new FrameLayout(this);
-        frame.setBackgroundColor(Color.WHITE);
+        frame.setBackgroundColor(Ui.BG);
         frame.setFitsSystemWindows(true);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -235,8 +237,9 @@ public class MainActivity extends Activity {
         LinearLayout tabs = new LinearLayout(this);
         tabs.setOrientation(LinearLayout.HORIZONTAL);
         GradientDrawable frameLine = new GradientDrawable();
-        frameLine.setColor(Color.WHITE);
-        frameLine.setStroke(dp(2), Color.BLACK);
+        frameLine.setColor(Ui.BG);
+        frameLine.setStroke(Math.max(1, dp(Ui.LINE_DP)), Ui.LINE);
+        if (Ui.COLOR) frameLine.setCornerRadius(dp(20));
         tabs.setBackground(frameLine);
         for (int i = 0; i < TAB_KEYS.length; i++) {
             final int index = i;
@@ -422,8 +425,16 @@ public class MainActivity extends Activity {
         placeView.setText(prefs.getString("name", DEF_NAME) + "  ▾");
         for (int i = 0; i < tabViews.length; i++) {
             boolean on = i == tab;
-            tabViews[i].setBackgroundColor(on ? Color.BLACK : Color.TRANSPARENT);
-            tabViews[i].setTextColor(on ? Color.WHITE : Color.BLACK);
+            if (Ui.COLOR) {
+                // Couleur : onglet choisi en pastille arrondie.
+                GradientDrawable pill = new GradientDrawable();
+                pill.setColor(Ui.ACCENT);
+                pill.setCornerRadius(dp(20));
+                tabViews[i].setBackground(on ? pill : null);
+            } else {
+                tabViews[i].setBackgroundColor(on ? Ui.ACCENT : Color.TRANSPARENT);
+            }
+            tabViews[i].setTextColor(on ? Ui.ON_ACCENT : Ui.INK);
         }
         boolean grid = tab == TAB_WEATHER;
         weatherView.setVisibility(grid ? View.VISIBLE : View.GONE);
@@ -667,7 +678,7 @@ public class MainActivity extends Activity {
         input.setHint(L.t("city_hint"));
         input.setSingleLine(true);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
-        input.setTextColor(Color.BLACK);
+        input.setTextColor(Ui.INK);
         LinearLayout box = new LinearLayout(this);
         box.setPadding(dp(20), dp(8), dp(20), 0);
         box.addView(input, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));

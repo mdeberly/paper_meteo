@@ -22,12 +22,20 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk PaperMeteo.apk
+          cp app/build/outputs/apk/eink/release/app-eink-release.apk PaperMeteo-EInk.apk
+          cp app/build/outputs/apk/color/release/app-color-release.apk PaperMeteo-Color.apk
 
+      # Variante E Ink (Mudita Kompakt…) : s'installe par-dessus les versions précédentes.
       - uses: actions/upload-artifact@v4
         with:
-          name: PaperMeteo-apk
-          path: PaperMeteo.apk
+          name: PaperMeteo-EInk
+          path: PaperMeteo-EInk.apk
+
+      # Variante couleur (téléphones classiques) : application distincte, installable à côté.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PaperMeteo-Color
+          path: PaperMeteo-Color.apk
 
       # Branche release/<nom> (ex. release/v1.0-kompakt) : étiquette <nom> et Release GitHub
       # permanente avec l'APK, créées automatiquement sur ce commit.
@@ -41,4 +49,6 @@ jobs:
         with:
           tag_name: ${{ env.TAG }}
           target_commitish: ${{ github.sha }}
-          files: PaperMeteo.apk
+          files: |
+            PaperMeteo-EInk.apk
+            PaperMeteo-Color.apk

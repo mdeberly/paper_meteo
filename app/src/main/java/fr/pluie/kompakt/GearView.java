@@ -32,10 +32,10 @@ public class GearView extends View {
             else gear.lineTo(x, y);
         }
         gear.close();
-        p.setColor(Color.BLACK);
+        p.setColor(Ui.COLOR ? Ui.MUTED : Ui.INK);
         p.setStyle(Paint.Style.FILL);
         c.drawPath(gear, p);
-        p.setColor(Color.WHITE);
+        p.setColor(Ui.BG);
         c.drawCircle(cx, cy, r * 0.34f, p);
     }
 }

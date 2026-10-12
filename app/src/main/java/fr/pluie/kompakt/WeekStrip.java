@@ -29,7 +29,7 @@ public class WeekStrip extends View {
 
     public WeekStrip(Context c) {
         super(c);
-        ink.setColor(Color.BLACK);
+        ink.setColor(Ui.LINE);
         label.setTextAlign(Paint.Align.CENTER);
         label.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         value.setTextAlign(Paint.Align.CENTER);
@@ -56,7 +56,7 @@ public class WeekStrip extends View {
 
     @Override
     protected void onDraw(Canvas c) {
-        c.drawColor(Color.WHITE);
+        c.drawColor(Ui.BG);
         if (labels == null) return;
         float w = getWidth(), h = getHeight();
         float cw = w / 4f, ch = h / 2f;
@@ -68,17 +68,25 @@ public class WeekStrip extends View {
         for (int i = 0; i < labels.length && i < 8; i++) {
             float x0 = (i % 4) * cw, y0 = (i / 4) * ch;
             boolean sel = i == selected;
-            ink.setColor(Color.BLACK);
-            if (sel) {
+            if (Ui.COLOR) {
+                // Couleur : pas de cadres, le jour choisi dans une pastille arrondie.
+                if (sel) {
+                    ink.setColor(Ui.ACCENT);
+                    float in = line * 2, rad = ch * 0.16f;
+                    c.drawRoundRect(x0 + in, y0 + in, x0 + cw - in, y0 + ch - in, rad, rad, ink);
+                }
+            } else if (sel) {
+                ink.setColor(Ui.ACCENT);
                 c.drawRect(x0, y0, x0 + cw, y0 + ch, ink);
             } else {
+                ink.setColor(Ui.LINE);
                 // Cadre de la case.
                 c.drawRect(x0, y0, x0 + cw, y0 + line, ink);
                 c.drawRect(x0, y0 + ch - line, x0 + cw, y0 + ch, ink);
                 c.drawRect(x0, y0, x0 + line, y0 + ch, ink);
                 c.drawRect(x0 + cw - line, y0, x0 + cw, y0 + ch, ink);
             }
-            int fg = sel ? Color.WHITE : Color.BLACK;
+            int fg = sel ? Ui.ON_ACCENT : Ui.INK;
             label.setColor(fg);
             value.setColor(fg);
             small.setColor(fg);

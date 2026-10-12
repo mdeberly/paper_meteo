@@ -17,32 +17,36 @@ final class WeatherIcon {
         float u = size / 2f;
         float stroke = Math.max(1.5f, size * 0.07f);
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        // E Ink : tout à l'encre fg. Couleur : une teinte par élément (soleil, lune, nuage, pluie, éclair).
+        int sunC = Ui.COLOR ? Ui.SUN : fg, moonC = Ui.COLOR ? Ui.MOON : fg;
+        int cloudC = Ui.COLOR ? Ui.CLOUD : fg, cloudFill = Ui.COLOR ? Ui.CLOUD_FILL : bg;
+        int rainC = Ui.COLOR ? Ui.RAIN : fg, boltC = Ui.COLOR ? Ui.BOLT : fg;
         p.setStrokeCap(Paint.Cap.ROUND);
         p.setStrokeJoin(Paint.Join.ROUND);
 
         switch (kind) {
             case Weather.CLEAR:
-                body(c, p, night, cx, cy, u * 0.9f, fg, bg, stroke);
+                body(c, p, night, cx, cy, u * 0.9f, night ? moonC : sunC, bg, stroke);
                 break;
             case Weather.FEW_CLOUDS:
-                body(c, p, night, cx - u * 0.25f, cy - u * 0.25f, u * 0.68f, fg, bg, stroke);
-                cloud(c, p, cx - u * 0.12f, cy + u * 0.02f, u * 1.1f, fg, bg, stroke);
+                body(c, p, night, cx - u * 0.25f, cy - u * 0.25f, u * 0.68f, night ? moonC : sunC, bg, stroke);
+                cloud(c, p, cx - u * 0.12f, cy + u * 0.02f, u * 1.1f, cloudC, cloudFill, stroke);
                 break;
             case Weather.MANY_CLOUDS:
-                body(c, p, night, cx - u * 0.38f, cy - u * 0.4f, u * 0.58f, fg, bg, stroke);
-                cloud(c, p, cx - u * 0.82f, cy - u * 0.28f, u * 1.75f, fg, bg, stroke);
+                body(c, p, night, cx - u * 0.38f, cy - u * 0.4f, u * 0.58f, night ? moonC : sunC, bg, stroke);
+                cloud(c, p, cx - u * 0.82f, cy - u * 0.28f, u * 1.75f, cloudC, cloudFill, stroke);
                 break;
             case Weather.OVERCAST:
-                cloud(c, p, cx - u * 0.95f, cy - u * 0.55f, u * 1.9f, fg, bg, stroke);
+                cloud(c, p, cx - u * 0.95f, cy - u * 0.55f, u * 1.9f, cloudC, cloudFill, stroke);
                 break;
             default: {
                 // Nuage en haut, précipitations dessous ; la nuit, la lune dépasse derrière le nuage.
-                if (night) body(c, p, true, cx - u * 0.52f, cy - u * 0.6f, u * 0.6f, fg, bg, stroke);
+                if (night) body(c, p, true, cx - u * 0.52f, cy - u * 0.6f, u * 0.6f, night ? moonC : sunC, bg, stroke);
                 float w = night ? u * 1.6f : u * 1.75f;
                 float top = night ? cy - u * 0.8f : cy - u * 0.92f;
-                cloud(c, p, night ? cx - u * 0.62f : cx - u * 0.8f, top, w, fg, bg, stroke);
+                cloud(c, p, night ? cx - u * 0.62f : cx - u * 0.8f, top, w, cloudC, cloudFill, stroke);
                 float yb = top + w * 0.62f; // bas du nuage
-                p.setColor(fg);
+                p.setColor(kind == Weather.STORM ? boltC : rainC);
                 if (kind == Weather.STORM) {
                     Path bolt = new Path();
                     bolt.moveTo(cx + u * 0.12f, yb + u * 0.02f);
@@ -89,7 +93,7 @@ final class WeatherIcon {
         }
     }
 
-    /** Nuage blanc cerné de noir, de largeur w (hauteur 0,62 w), coin haut-gauche en (l, t). */
+    /** Nuage rempli de bg et cerné de fg, de largeur w (hauteur 0,62 w), coin haut-gauche en (l, t). */
     private static void cloud(Canvas c, Paint p, float l, float t, float w, int fg, int bg, float stroke) {
         Path shape = new Path();
         shape.addCircle(l + 0.55f * w, t + 0.30f * w, 0.28f * w, Path.Direction.CW);

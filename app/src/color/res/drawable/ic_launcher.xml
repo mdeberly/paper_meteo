@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône de la variante couleur : goutte terre cuite et petit soleil sur fond crème. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#FBF6EF"
+        android:pathData="M24,24m-24,0a24,24 0,1 0,48 0a24,24 0,1 0,-48 0" />
+    <path
+        android:fillColor="#F0A030"
+        android:pathData="M33,15m-6,0a6,6 0,1 0,12 0a6,6 0,1 0,-12 0" />
+    <path
+        android:fillColor="#B84E24"
+        android:pathData="M22,9C22,9 12,21.5 12,29.5a10,10 0,0 0,20 0C32,21.5 22,9 22,9z" />
+</vector>

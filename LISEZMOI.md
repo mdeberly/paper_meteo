@@ -1,4 +1,14 @@
-# Paper Meteo — météo, résumé et éphéméride pour Mudita Kompakt
+# Paper Meteo — météo, résumé et éphéméride
+
+Deux variantes, compilées à partir du même code :
+
+- **E Ink** (`PaperMeteo-EInk.apk`) : pour le Mudita Kompakt et les autres écrans E Ink — noir et blanc pur,
+  aucune animation. Même identifiant que les premières versions : s'installe par-dessus.
+- **Couleur** (`PaperMeteo-Color.apk`) : pour les téléphones Android à écran couleur — thème clair aux tons
+  chauds, icônes en couleur, sobre et contrasté. Application distincte, installable à côté de la version E Ink.
+
+Le code commun est dans `app/src/main` ; ce qui distingue les variantes : `app/src/eink` et `app/src/color`
+(classe `Flavor`, thème, icône), et la palette `Ui.java`.
 
 Trois onglets :
 
@@ -33,14 +43,19 @@ Et aussi :
    Si l'onglet Actions reste vide (le dossier caché `.github` n'a pas été envoyé) : « Add file → Create new file »,
    nommer le fichier `.github/workflows/build.yml` et y coller le contenu du fichier du même nom.
 3. Onglet **Actions** → « Compiler l'APK » se lance tout seul (≈ 5 min).
-4. Ouvrir l'exécution terminée → section **Artifacts** → télécharger `PaperMeteo-apk` (un zip contenant `PaperMeteo.apk`).
+4. Ouvrir l'exécution terminée → section **Artifacts** → télécharger `PaperMeteo-EInk` ou `PaperMeteo-Color`
+   (un zip contenant l'APK).
+
+Versions figées : onglet **Releases** du dépôt (ex. `v1.0-kompakt`). Pour en créer une, pousser une branche
+`release/<nom>` : la compilation crée l'étiquette `<nom>` et la Release avec les APK.
 
 ## Ou compiler sur son PC
 
 Avec Android Studio installé : ouvrir le dossier, puis `./gradlew assembleRelease`
-(sous Windows : `gradlew.bat assembleRelease`). L'APK sort dans `app/build/outputs/apk/release/`.
+(sous Windows : `gradlew.bat assembleRelease`). Les APK sortent dans `app/build/outputs/apk/eink/release/`
+et `app/build/outputs/apk/color/release/`.
 
 ## Installer sur le Kompakt
 
 Via **Mudita Center** (gestion des applications → installer un APK), ou en ADB :
-`adb install -r PaperMeteo.apk`.
+`adb install -r PaperMeteo-EInk.apk`.

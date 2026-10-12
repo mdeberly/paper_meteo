@@ -27,7 +27,7 @@ public class SettingsActivity extends Activity {
 
     private TextView text(float sizeSp, boolean bold) {
         TextView t = new TextView(this);
-        t.setTextColor(Color.BLACK);
+        t.setTextColor(Ui.INK);
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp);
         t.setTypeface(Typeface.create("sans-serif", bold ? Typeface.BOLD : Typeface.NORMAL));
         return t;
@@ -40,7 +40,7 @@ public class SettingsActivity extends Activity {
         MainActivity.applySettings(prefs);
 
         FrameLayout frame = new FrameLayout(this);
-        frame.setBackgroundColor(Color.WHITE);
+        frame.setBackgroundColor(Ui.BG);
         frame.setFitsSystemWindows(true);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -99,8 +99,8 @@ public class SettingsActivity extends Activity {
 
     private View rule() {
         View v = new View(this);
-        v.setBackgroundColor(Color.BLACK);
-        v.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(2)));
+        v.setBackgroundColor(Ui.LINE);
+        v.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, dp(Ui.LINE_DP))));
         return v;
     }
 
@@ -140,7 +140,7 @@ public class SettingsActivity extends Activity {
         TextView body = text(17, false);
         body.setText(L.t("about_text") + "\n\nwww.deberly.fr");
         body.setPadding(dp(24), dp(12), dp(24), 0);
-        body.setLinkTextColor(Color.BLACK);
+        body.setLinkTextColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);
         Linkify.addLinks(body, Linkify.WEB_URLS);
         body.setMovementMethod(LinkMovementMethod.getInstance());
         new AlertDialog.Builder(this)
