@@ -29,8 +29,9 @@ public class DayView extends View {
         boolean iconNight, highlight;
     }
 
-    // Colonnes, en fraction de la largeur : bord droit des valeurs (alignées à droite).
-    private static final float ICON = 0.205f, SUN = 0.40f, RAIN = 0.555f, TEMP = 0.695f, WIND = 0.825f, ARROW = 0.875f;
+    // Colonnes, en fraction de la largeur : centre de l'icône, bord droit des valeurs (alignées à droite),
+    // centre de la colonne du vent (direction au-dessus, vitesse en dessous).
+    private static final float ICON = 0.265f, SUN = 0.47f, RAIN = 0.63f, TEMP = 0.785f, WIND = 0.905f;
 
     private final boolean header;
     private List<Cell> cells;
@@ -57,7 +58,7 @@ public class DayView extends View {
 
     /** Hauteur d'une ligne, en pixels. */
     public int rowHeight() {
-        return px(header ? 32 : 40);
+        return px(header ? 32 : 60);
     }
 
     private int px(float dp) {
@@ -88,6 +89,7 @@ public class DayView extends View {
             title(c, L.t("col_sun"), "min", w * SUN, y1, y2);
             title(c, L.t("col_rain"), "mm", w * RAIN, y1, y2);
             title(c, L.t("col_temp"), Fmt.unit(), w * TEMP, y1, y2);
+            text.setTextAlign(Paint.Align.CENTER);
             title(c, L.t("col_wind"), "km/h", w * WIND, y1, y2);
             text.setTextAlign(Paint.Align.LEFT);
             c.drawText(L.t("col_hour"), pad, y2, text);
@@ -98,10 +100,10 @@ public class DayView extends View {
         if (cells == null) return;
 
         float ch = rowHeight();
-        float ts = sp(16);
-        text.setTextSize(ts);
+        float ts = sp(22);
+        float small = sp(18);
         bold.setTextSize(ts);
-        float iconSize = ch * 0.78f;
+        float iconSize = ch * 0.8f;
 
         for (int i = 0; i < cells.size(); i++) {
             Cell cell = cells.get(i);
@@ -116,8 +118,14 @@ public class DayView extends View {
             bold.setColor(fg);
             float base = y0 + ch / 2f + ts * 0.36f;
 
+            // Heure, réduite si besoin pour ne pas toucher l'icône (« 10 am », « 07:00 »…).
+            text.setTextSize(ts);
+            float room = w * ICON - iconSize / 2f - pad * 2;
+            float lw = text.measureText(cell.label);
+            if (lw > room) text.setTextSize(ts * room / lw);
             text.setTextAlign(Paint.Align.LEFT);
             c.drawText(cell.label, pad, base, text);
+            text.setTextSize(ts);
             WeatherIcon.draw(c, cell.icon, cell.iconNight, w * ICON, y0 + ch / 2f, iconSize, fg, bg);
 
             text.setTextAlign(Paint.Align.RIGHT);
@@ -125,13 +133,22 @@ public class DayView extends View {
             c.drawText(cell.sun, w * SUN, base, text);
             c.drawText(cell.rain, w * RAIN, base, bold);
             c.drawText(cell.temp, w * TEMP, base, bold);
-            c.drawText(cell.wind, w * WIND, base, text);
 
+            // Vent : flèche et direction sur la moitié haute, vitesse sur la moitié basse.
+            text.setTextSize(small);
+            float wx = w * WIND;
             if (!Double.isNaN(cell.windDir)) {
-                arrow(c, w * ARROW, y0 + ch / 2f, ch * 0.26f, cell.windDir, fg);
+                String dir = Fmt.compass(cell.windDir);
+                float r = ch * 0.17f;
+                float tw = text.measureText(dir);
+                float gap = r * 0.6f;
+                float left = wx - (2 * r + gap + tw) / 2f;
+                arrow(c, left + r, y0 + ch * 0.3f, r, cell.windDir, fg);
                 text.setTextAlign(Paint.Align.LEFT);
-                c.drawText(Fmt.compass(cell.windDir), w * ARROW + ch * 0.32f, base, text);
+                c.drawText(dir, left + 2 * r + gap, y0 + ch * 0.3f + small * 0.36f, text);
             }
+            text.setTextAlign(Paint.Align.CENTER);
+            c.drawText(cell.wind, wx, y0 + ch * 0.74f + small * 0.36f, text);
 
             ink.setColor(Color.BLACK);
             if (!inv) c.drawRect(0, y0 + ch - line, w, y0 + ch, ink);
