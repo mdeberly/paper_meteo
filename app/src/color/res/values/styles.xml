@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Variante couleur : thème clair aux tons chauds (papier crème, encre brun-noir, accent terre cuite). -->
-    <color name="paper">#FBF6EF</color>
+    <color name="paper">#F7E8D5</color>
     <color name="ink">#2E2622</color>
     <color name="accent">#B84E24</color>
 

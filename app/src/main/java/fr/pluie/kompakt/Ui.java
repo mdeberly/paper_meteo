@@ -11,20 +11,20 @@ final class Ui {
     static final boolean COLOR = Flavor.COLOR;
 
     /** Fond de l'écran. */
-    static final int BG = COLOR ? 0xFFFBF6EF : 0xFFFFFFFF;
+    static final int BG = COLOR ? 0xFFF7E8D5 : 0xFFFFFFFF;
     /** Texte principal. */
     static final int INK = COLOR ? 0xFF2E2622 : 0xFF000000;
     /** Texte secondaire (titres de colonnes, légendes). */
     static final int MUTED = COLOR ? 0xFF7B6F67 : 0xFF000000;
     /** Traits de séparation et cadres. */
-    static final int LINE = COLOR ? 0xFFE4D9CD : 0xFF000000;
+    static final int LINE = COLOR ? 0xFFE2C9AF : 0xFF000000;
     /** Épaisseur des traits, en dp. */
     static final float LINE_DP = COLOR ? 1 : 2;
     /** Onglet et jour sélectionnés. */
     static final int ACCENT = COLOR ? 0xFFB84E24 : 0xFF000000;
     static final int ON_ACCENT = 0xFFFFFFFF;
     /** Ligne de l'heure en cours. */
-    static final int HL_BG = COLOR ? 0xFFF6E3D3 : 0xFF000000;
+    static final int HL_BG = COLOR ? 0xFFEFCBAA : 0xFF000000;
     static final int HL_FG = COLOR ? 0xFF2E2622 : 0xFFFFFFFF;
     /** Valeurs de pluie dans la liste. */
     static final int RAIN_TEXT = COLOR ? 0xFF2F6AAE : 0xFF000000;
