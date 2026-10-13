@@ -9,7 +9,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 /**
- * Les 8 jours (hier → J+6) en 2 lignes de 4 cases. Chaque case montre le jour, une valeur
+ * Les 9 jours (hier → J+7) en 3 lignes de 3 cases. Chaque case montre le jour, une valeur
  * (cumul de pluie, durée d'ensoleillement) ou une petite lune, et les températures mini / maxi.
  * Toucher une case l'ouvre.
  */
@@ -67,15 +67,16 @@ public class WeekStrip extends View {
         c.drawColor(Ui.BG);
         if (labels == null) return;
         float w = getWidth(), h = getHeight();
-        float cw = w / 4f, ch = h / 2f;
-        float line = Math.max(1, h * 0.012f);
+        int cols = columns(), rows = rows();
+        float cw = w / cols, ch = h / rows;
+        float line = Math.max(1, Math.min(cw, ch) * 0.025f);
         boolean withIcons = icons != null;
-        label.setTextSize(ch * (withIcons ? 0.17f : 0.25f));
-        value.setTextSize(ch * (withIcons ? 0.19f : 0.28f));
+        label.setTextSize(ch * (withIcons ? 0.18f : 0.25f));
+        value.setTextSize(ch * (withIcons ? 0.2f : 0.28f));
         small.setTextSize(ch * (withIcons ? 0.16f : 0.23f));
 
-        for (int i = 0; i < labels.length && i < 8; i++) {
-            float x0 = (i % 4) * cw, y0 = (i / 4) * ch;
+        for (int i = 0; i < labels.length && i < cols * rows; i++) {
+            float x0 = (i % cols) * cw, y0 = (i / cols) * ch;
             boolean sel = i == selected;
             if (Ui.COLOR) {
                 // Couleur : pas de cadres, le jour choisi dans une pastille arrondie.
@@ -102,12 +103,12 @@ public class WeekStrip extends View {
             float cx = x0 + cw / 2f;
             if (withIcons) {
                 // Jour, grande icône du temps de la journée, cumul de pluie, mini / maxi.
-                c.drawText(labels[i], cx, y0 + ch * 0.18f, label);
-                float size = Math.min(ch * 0.36f, cw * 0.6f);
+                c.drawText(labels[i], cx, y0 + ch * 0.19f, label);
+                float size = Math.min(ch * 0.34f, cw * 0.6f);
                 int bg = sel ? Ui.ACCENT : Ui.BG;
-                WeatherIcon.draw(c, icons[i], false, cx, y0 + ch * 0.41f, size, fg, bg);
-                c.drawText(values[i], cx, y0 + ch * 0.75f, value);
-                if (temps != null) c.drawText(temps[i], cx, y0 + ch * 0.93f, small);
+                WeatherIcon.draw(c, icons[i], false, cx, y0 + ch * 0.4f, size, fg, bg);
+                c.drawText(values[i], cx, y0 + ch * 0.73f, value);
+                if (temps != null) c.drawText(temps[i], cx, y0 + ch * 0.91f, small);
                 continue;
             }
             c.drawText(labels[i], cx, y0 + ch * 0.30f, label);
@@ -125,14 +126,25 @@ public class WeekStrip extends View {
     public boolean onTouchEvent(MotionEvent e) {
         if (e.getAction() == MotionEvent.ACTION_DOWN) return true;
         if (e.getAction() == MotionEvent.ACTION_UP && listener != null && labels != null) {
-            int col = (int) (e.getX() / (getWidth() / 4f));
-            int row = (int) (e.getY() / (getHeight() / 2f));
-            int idx = Math.max(0, Math.min(3, col)) + 4 * Math.max(0, Math.min(1, row));
+            int cols = columns(), rows = rows();
+            int col = (int) (e.getX() / ((float) getWidth() / cols));
+            int row = (int) (e.getY() / ((float) getHeight() / rows));
+            int idx = Math.max(0, Math.min(cols - 1, col)) + cols * Math.max(0, Math.min(rows - 1, row));
             if (idx < labels.length) listener.pick(idx);
             performClick();
             return true;
         }
         return super.onTouchEvent(e);
+    }
+
+    /** 9 jours en 3 × 3 ; sinon 4 colonnes. */
+    private int columns() {
+        return labels != null && labels.length == 9 ? 3 : 4;
+    }
+
+    private int rows() {
+        int n = labels == null ? 0 : labels.length;
+        return Math.max(1, (n + columns() - 1) / columns());
     }
 
     @Override

@@ -73,7 +73,7 @@ public class MainActivity extends Activity {
     private boolean restored;
     /** Langue et unité en vigueur à la construction de l'écran. */
     private String config;
-    /** À l'arrivée sur l'onglet Météo, placer la liste sur l'heure en cours. */
+    /** À l'arrivée sur l'onglet Météo, remonter la liste tout en haut. */
     private boolean positionList;
 
     private TextView placeView, titleView, totalView, statusView;
@@ -301,7 +301,7 @@ public class MainActivity extends Activity {
         weatherStrip = new WeekStrip(this);
         weatherStrip.setOnPick(i -> { selected = i; render(); });
         LinearLayout.LayoutParams wlp = stripParams();
-        wlp.height = dp(160); // plus haute : une grande icône par jour
+        wlp.height = dp(3 * 92); // 9 jours en 3 × 3, grandes cases avec une grande icône par jour
         content.addView(weatherStrip, wlp);
         totalView = text(15, false);
         totalView.setPadding(0, dp(6), 0, dp(4));
@@ -336,7 +336,7 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout.LayoutParams stripParams() {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(104));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(3 * 46));
         lp.topMargin = dp(6);
         return lp;
     }
@@ -399,7 +399,7 @@ public class MainActivity extends Activity {
         summaryText.setPadding(0, dp(4), 0, 0);
         p.addView(summaryText);
         p.addView(rule());
-        TextView l = text(13, false);
+        TextView l = text(16, false);
         l.setText(L.t("next2h"));
         p.addView(l);
         soonView = text(18, true);
@@ -597,12 +597,11 @@ public class MainActivity extends Activity {
         }
         dayView.setCells(cells);
 
-        // En arrivant sur l'onglet, la liste se place sur l'heure en cours (aujourd'hui), sinon tout en haut.
+        // En arrivant sur l'onglet, on part tout en haut (bandeau des jours visible).
         // En changeant de jour, la position ne bouge pas : le bandeau touché reste sous le doigt.
         if (positionList) {
             positionList = false;
-            int row = Math.max(0, current - 1);
-            scroll.post(() -> scroll.scrollTo(0, hour >= 0 ? dayView.getTop() + row * dayView.rowHeight() : 0));
+            scroll.post(() -> scroll.scrollTo(0, 0));
         }
     }
 
@@ -672,7 +671,7 @@ public class MainActivity extends Activity {
                         + "wind_speed_10m,wind_direction_10m,direct_radiation"
                         + "&current=temperature_2m,apparent_temperature,weather_code,cloud_cover,precipitation,"
                         + "wind_speed_10m,wind_direction_10m,is_day"
-                        + "&past_days=1&forecast_days=8&timezone=auto",
+                        + "&past_days=1&forecast_days=9&timezone=auto",
                 lat(), lon());
         io.execute(() -> {
             try {

@@ -16,7 +16,7 @@ Trois onglets :
   puis quelques phrases qui décrivent le temps des heures à venir
   (la journée entière le matin, l'après-midi à partir de midi, la soirée à partir de 17 h, la nuit après 22 h),
   une phrase sur la pluie des 2 prochaines heures, et les 12 prochaines heures en icônes (défilement horizontal).
-- **Météo** : d'hier à J+6, une liste qui défile, une ligne par heure (la nuit regroupée en 0–3h et 3–6h) :
+- **Météo** : d’hier à J+7, une liste qui défile, une ligne par heure (la nuit regroupée en 0–3h et 3–6h) :
   icône météo (soleil, nuages, pluie, orage ; lune la nuit), minutes de soleil, millimètres de pluie,
   température, vitesse du vent en km/h et sa direction. Le bandeau des jours défile avec la liste ;
   seuls le lieu et les onglets restent fixes. La liste s'ouvre sur l'heure en cours.
@@ -27,7 +27,7 @@ Trois onglets :
 
 Et aussi :
 
-- Bandeau des 8 jours (icône du temps de la journée et cumul de pluie, ou petite lune ; températures mini / maxi) : toucher une case ouvre le jour ;
+- Bandeau des 9 jours (hier à J+7, en 3 × 3) (icône du temps de la journée et cumul de pluie, ou petite lune ; températures mini / maxi) : toucher une case ouvre le jour ;
   glisser franchement à gauche / à droite change aussi de jour.
 - L'heure en cours est inversée (blanc sur noir). « 07h » = de 7 h à 8 h.
 - Toucher le nom du lieu pour en chercher un autre ou utiliser la position GPS (Chauny par défaut).

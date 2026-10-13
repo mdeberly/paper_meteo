@@ -40,7 +40,7 @@ public class NextHoursView extends View {
 
     /** Largeur d'une heure : 6 heures tiennent sur l'écran du Kompakt. */
     private int columnWidth() {
-        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 51, getResources().getDisplayMetrics()));
+        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 58, getResources().getDisplayMetrics()));
     }
 
     @Override
@@ -58,10 +58,10 @@ public class NextHoursView extends View {
         float cw = columnWidth();
         float line = Math.max(1, TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, Ui.LINE_DP,
                 getResources().getDisplayMetrics()));
-        float ts = Math.min(cw * 0.26f, h * 0.12f);
+        float ts = Math.min(cw * 0.27f, h * 0.13f);
         label.setTextSize(ts);
         value.setTextSize(ts * 1.05f);
-        float icon = Math.min(cw * 0.8f, h * 0.38f);
+        float icon = Math.min(cw * 0.82f, h * 0.4f);
         // Les séparateurs s'arrêtent sous la dernière ligne de texte, pas en bas de l'écran.
         float bottom = ts * 1.5f + icon + ts * 1.2f + ts * 1.3f + ts * 0.5f;
 
