@@ -18,6 +18,7 @@ public class Day {
     public final Series rh = new Series();     // humidité relative à 2 m, %
     public final Series dew = new Series();    // point de rosée à 2 m, °C
     public final Series lowCloud = new Series(); // couverture nuageuse basse, %
+    public final Series highCloud = new Series(); // couverture nuageuse haute (voile), %
     /** Code temps WMO d'Open-Meteo (95 et plus = orage), -1 si inconnu. */
     public final int[] code = new int[24];
 

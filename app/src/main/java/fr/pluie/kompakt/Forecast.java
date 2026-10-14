@@ -63,9 +63,10 @@ public class Forecast {
         JSONArray rh = hourly.optJSONArray("relative_humidity_2m");
         JSONArray dew = hourly.optJSONArray("dew_point_2m");
         JSONArray lowCloud = hourly.optJSONArray("cloud_cover_low");
+        JSONArray highCloud = hourly.optJSONArray("cloud_cover_high");
         JSONObject cur = o.optJSONObject("current");
         Forecast f = new Forecast(zone, sun != null && cloud != null && temp != null && code != null
-                && wind != null && windDir != null && direct != null && vis != null && snow != null && rh != null && dew != null && lowCloud != null
+                && wind != null && windDir != null && direct != null && vis != null && snow != null && rh != null && dew != null && lowCloud != null && highCloud != null
                 && cur != null);
         for (int i = 0; i < times.length(); i++) {
             LocalDateTime slotStart = LocalDateTime.parse(times.getString(i)).minusHours(1);
@@ -88,6 +89,7 @@ public class Forecast {
             put(day.rh, rh, i, h, 1);
             put(day.dew, dew, i, h, 1);
             put(day.lowCloud, lowCloud, i, h, 1);
+            put(day.highCloud, highCloud, i, h, 1);
             if (code != null && i < code.length() && !code.isNull(i)) day.code[h] = code.getInt(i);
         }
         if (o.has("latitude") && direct != null) {
@@ -123,6 +125,7 @@ public class Forecast {
      * à cette heure et à cet endroit, il donne la part de l'heure ensoleillée (0,5 → environ 30 min).
      * Soleil trop bas (direct par ciel clair < 25 W/m²) : on garde la valeur d'Open-Meteo.
      * La couverture nuageuse sert d'estimation complémentaire ; on retient la plus haute.
+     * Sous un voile de nuages hauts, l'heure n'est comptée qu'en proportion du direct reçu.
      */
     private static void estimateSunshine(Day day, ZoneId zone, double lat, double lon) {
         for (int h = 0; h < 24; h++) {
@@ -135,14 +138,21 @@ public class Forecast {
                 if (el > -0.833) daylight += 10;
             }
             if (clear < 25) continue;
-            // Au sens de l'OMM, un soleil voilé compte déjà comme ensoleillé (direct > 120 W/m²) :
-            // dès 60 % du direct par ciel clair, l'heure entière est comptée ensoleillée.
-            double byDirect = 60 * Math.min(1, day.direct.v[h] / clear / 0.6);
-            // Deuxième estimation, par la couverture nuageuse (40 % de nuages → environ 36 min de soleil).
+            double f = day.direct.v[h] / clear;
+            // Soleil voilé : nuages hauts sur au moins 40 % du ciel et direct sous 85 % du ciel clair.
+            // Le voile laisse passer assez de direct pour compter comme « ensoleillé » au sens de l'OMM,
+            // mais on le compte en proportion du direct reçu, réduit d'un cinquième (50 % → 24 min).
+            boolean veiled = day.highCloud.has[h] && day.highCloud.v[h] >= 40 && f < 0.85;
+            double byDirect = veiled ? 60 * Math.min(1, f) * 0.8
+                    // Ciel sans voile : heure entière ensoleillée dès 70 % du direct par ciel clair.
+                    : 60 * Math.min(1, f / 0.7);
+            // Deuxième estimation, par la couverture nuageuse (le voile y est compté comme nuage).
             double byCloud = day.cloud.has[h] ? 60 * (1 - day.cloud.v[h] / 100) : 0;
-            // On garde la plus haute des estimations, sans jamais descendre sous la valeur d'Open-Meteo.
+            double est = Math.max(byDirect, byCloud);
+            // Valeur d'Open-Meteo comme plancher, sauf sous un voile (elle le compte en plein soleil).
             double model = day.sun.has[h] ? day.sun.v[h] : 0;
-            day.sun.v[h] = Math.min(daylight, Math.max(model, Math.max(byDirect, byCloud)));
+            if (!veiled) est = Math.max(est, model);
+            day.sun.v[h] = Math.min(daylight, est);
             day.sun.has[h] = true;
         }
     }

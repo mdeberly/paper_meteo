@@ -674,7 +674,7 @@ public class MainActivity extends Activity {
                 "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
                         + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m,"
                         + "wind_speed_10m,wind_direction_10m,direct_radiation,visibility,snowfall,"
-                        + "relative_humidity_2m,dew_point_2m,cloud_cover_low"
+                        + "relative_humidity_2m,dew_point_2m,cloud_cover_low,cloud_cover_high"
                         + "&current=temperature_2m,apparent_temperature,weather_code,cloud_cover,precipitation,"
                         + "wind_speed_10m,wind_direction_10m,is_day,visibility,snowfall,relative_humidity_2m,dew_point_2m,"
                         + "cloud_cover_low"
