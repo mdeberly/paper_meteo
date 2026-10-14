@@ -263,13 +263,13 @@ final class L {
         put("about", "À propos", "About", "Über die App", "Acerca de", "Informazioni", "Sobre", "O aplikacji");
         put("version", "Version {0}", "Version {0}", "Version {0}", "Versión {0}", "Versione {0}", "Versão {0}", "Wersja {0}");
         put("credits",
-                "Prévisions : Open-Meteo.com (CC BY 4.0). Fêtes PL, DE, CZ, SE, NO, DK : namedays © Filip Tammergård (MIT).",
-                "Forecasts: Open-Meteo.com (CC BY 4.0). Name days PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
-                "Vorhersagen: Open-Meteo.com (CC BY 4.0). Namenstage PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
-                "Previsiones: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
-                "Previsioni: Open-Meteo.com (CC BY 4.0). Onomastici PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
-                "Previsões: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).",
-                "Prognozy: Open-Meteo.com (CC BY 4.0). Imieniny PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT).");
+                "Prévisions : Open-Meteo.com (CC BY 4.0). Fêtes PL, DE, CZ, SE, NO, DK : namedays © Filip Tammergård (MIT). Communes : © OpenStreetMap (ODbL).",
+                "Forecasts: Open-Meteo.com (CC BY 4.0). Name days PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Places: © OpenStreetMap (ODbL).",
+                "Vorhersagen: Open-Meteo.com (CC BY 4.0). Namenstage PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Orte: © OpenStreetMap (ODbL).",
+                "Previsiones: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Lugares: © OpenStreetMap (ODbL).",
+                "Previsioni: Open-Meteo.com (CC BY 4.0). Onomastici PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Località: © OpenStreetMap (ODbL).",
+                "Previsões: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Locais: © OpenStreetMap (ODbL).",
+                "Prognozy: Open-Meteo.com (CC BY 4.0). Imieniny PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Miejscowości: © OpenStreetMap (ODbL).");
         put("about_text",
                 "Application créée par l'IA Claude sur l'idée de Maximilien DEBERLY, Chauny, FRANCE.",
                 "App created by the AI Claude from an idea by Maximilien DEBERLY, Chauny, FRANCE.",

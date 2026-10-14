@@ -14,6 +14,8 @@ final class Http {
         c.setConnectTimeout(15000);
         c.setReadTimeout(20000);
         c.setRequestProperty("Accept", "application/json");
+        // Identification demandée par OpenStreetMap (Nominatim) pour la recherche du nom de la commune.
+        c.setRequestProperty("User-Agent", "PaperMeteo (Android; www.deberly.fr)");
         try {
             int code = c.getResponseCode();
             if (code != 200) throw new Exception("HTTP " + code);

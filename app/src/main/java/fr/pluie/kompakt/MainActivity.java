@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -157,6 +159,8 @@ public class MainActivity extends Activity {
         boolean stale = System.currentTimeMillis() - prefs.getLong("fetched", 0) > STALE_MS;
         if (stale || (forecast != null && !forecast.complete)) refresh();
         else render(); // la date a pu changer depuis la dernière ouverture
+        // Lieu GPS enregistré sans nom de commune (versions précédentes ou réseau absent) : on le cherche.
+        if (prefs.getString("name", DEF_NAME).startsWith("GPS ")) resolvePlaceName(lat(), lon());
     }
 
     @Override
@@ -801,8 +805,54 @@ public class MainActivity extends Activity {
     }
 
     private void gpsPlace(Location l) {
-        setPlace(String.format(Locale.ROOT, "GPS %.2f, %.2f", l.getLatitude(), l.getLongitude()),
-                l.getLatitude(), l.getLongitude());
+        double la = l.getLatitude(), lo = l.getLongitude();
+        // Coordonnées affichées le temps de trouver le nom de la commune, puis remplacées par celui-ci.
+        setPlace(String.format(Locale.ROOT, "GPS %.2f, %.2f", la, lo), la, lo);
+        resolvePlaceName(la, lo);
+    }
+
+    /** Remplace en arrière-plan le nom « GPS … » par celui de la commune, si on le trouve. */
+    private void resolvePlaceName(double la, double lo) {
+        io.execute(() -> {
+            String name = placeName(la, lo);
+            if (name == null || name.isEmpty()) return;
+            ui.post(() -> {
+                // Seulement si le lieu n'a pas changé entre-temps.
+                if (lat() != la || lon() != lo) return;
+                prefs.edit().putString("name", name).apply();
+                render();
+            });
+        });
+    }
+
+    /** Nom de la commune aux coordonnées données (OpenStreetMap, sinon géocodeur du système), ou null. */
+    @SuppressWarnings("deprecation")
+    private String placeName(double la, double lo) {
+        try {
+            String url = String.format(Locale.ROOT,
+                    "https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=13&lat=%.5f&lon=%.5f&accept-language=%s",
+                    la, lo, L.code());
+            JSONObject res = new JSONObject(Http.get(url));
+            JSONObject a = res.optJSONObject("address");
+            if (a != null) {
+                for (String k : new String[]{"city", "town", "village", "municipality", "hamlet", "suburb"}) {
+                    String v = a.optString(k, "");
+                    if (!v.isEmpty()) return v;
+                }
+            }
+            String v = res.optString("name", "");
+            if (!v.isEmpty()) return v;
+        } catch (Exception ignored) {
+        }
+        try {
+            if (!Geocoder.isPresent()) return null;
+            List<Address> list = new Geocoder(this, Locale.getDefault()).getFromLocation(la, lo, 1);
+            if (list == null || list.isEmpty()) return null;
+            Address a = list.get(0);
+            return a.getLocality() != null ? a.getLocality() : a.getSubAdminArea();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @SuppressLint("MissingPermission")
