@@ -135,7 +135,12 @@ public class DayView extends View {
             // Pluie en bleu dans la variante couleur, seulement quand il y a une quantité.
             boolean amount = !cell.rain.equals("–") && !cell.rain.equals(L.t("nd"));
             bold.setColor(amount && (Ui.COLOR || !inv) ? Ui.RAIN_TEXT : fg);
+            // Valeur réduite si elle ne tient pas entre les colonnes Soleil et Pluie (« 0,3 cm »).
+            float rainRoom = w * (RAIN - SUN) - pad * 2;
+            float rw = bold.measureText(cell.rain);
+            if (rw > rainRoom) bold.setTextSize(ts * rainRoom / rw);
             c.drawText(cell.rain, w * RAIN, base, bold);
+            bold.setTextSize(ts);
             bold.setColor(fg);
             c.drawText(cell.temp, w * TEMP, base, bold);
 

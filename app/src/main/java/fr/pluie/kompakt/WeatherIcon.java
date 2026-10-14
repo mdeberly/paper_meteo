@@ -20,7 +20,7 @@ final class WeatherIcon {
         // E Ink : tout à l'encre fg. Couleur : une teinte par élément (soleil, lune, nuage, pluie, éclair).
         int sunC = Ui.COLOR ? Ui.SUN : fg, moonC = Ui.COLOR ? Ui.MOON : fg;
         int cloudC = Ui.COLOR ? Ui.CLOUD : fg, cloudFill = Ui.COLOR ? Ui.CLOUD_FILL : bg;
-        int rainC = Ui.COLOR ? Ui.RAIN : fg, boltC = Ui.COLOR ? Ui.BOLT : fg;
+        int rainC = Ui.COLOR ? Ui.RAIN : fg, boltC = Ui.COLOR ? Ui.BOLT : fg, snowC = Ui.COLOR ? Ui.SNOW : fg;
         p.setStrokeCap(Paint.Cap.ROUND);
         p.setStrokeJoin(Paint.Join.ROUND);
 
@@ -37,6 +37,15 @@ final class WeatherIcon {
                 cloud(c, p, cx - u * 0.82f, cy - u * 0.28f, u * 1.75f, cloudC, cloudFill, stroke);
                 break;
             case Weather.FOG: {
+                // Brouillard seul : quatre bandes horizontales, sans astre.
+                p.setStyle(Paint.Style.STROKE);
+                p.setStrokeWidth(stroke * 1.4f);
+                p.setColor(cloudC);
+                float[][] fogBands = {{-0.8f, 0.55f, -0.52f}, {-0.6f, 0.8f, -0.17f}, {-0.8f, 0.7f, 0.18f}, {-0.55f, 0.8f, 0.53f}};
+                for (float[] b : fogBands) c.drawLine(cx + b[0] * u, cy + b[2] * u, cx + b[1] * u, cy + b[2] * u, p);
+                break;
+            }
+            case Weather.FOG_SUN: {
                 // Soleil (ou lune) voilé par trois bandes de brouillard ; chaque bande est détourée
                 // de la couleur du fond pour bien se détacher de l'astre.
                 body(c, p, night, cx - u * 0.2f, cy - u * 0.38f, u * 0.62f, night ? moonC : sunC, bg, stroke);
@@ -60,7 +69,18 @@ final class WeatherIcon {
                 cloud(c, p, night ? cx - u * 0.62f : cx - u * 0.8f, top, w, cloudC, cloudFill, stroke);
                 float yb = top + w * 0.62f; // bas du nuage
                 p.setColor(kind == Weather.STORM ? boltC : rainC);
-                if (kind == Weather.STORM) {
+                boolean snow = kind == Weather.SNOW_LIGHT || kind == Weather.SNOW_MODERATE || kind == Weather.SNOW_HEAVY;
+                if (snow) {
+                    // Flocons sous le nuage : 2 (faible), 3 (modérée) ou 5 sur deux rangs (forte).
+                    float[][] flakes = kind == Weather.SNOW_LIGHT ? new float[][]{{-0.3f, 0.32f}, {0.3f, 0.32f}}
+                            : kind == Weather.SNOW_MODERATE ? new float[][]{{-0.48f, 0.32f}, {0f, 0.32f}, {0.48f, 0.32f}}
+                            : new float[][]{{-0.48f, 0.22f}, {0f, 0.22f}, {0.48f, 0.22f}, {-0.24f, 0.62f}, {0.24f, 0.62f}};
+                    float fr = u * (kind == Weather.SNOW_HEAVY ? 0.15f : 0.18f);
+                    p.setColor(snowC);
+                    p.setStyle(Paint.Style.STROKE);
+                    p.setStrokeWidth(Math.max(1f, stroke * 0.8f));
+                    for (float[] f : flakes) flake(c, p, cx + f[0] * u, yb + f[1] * u + fr * 0.4f, fr);
+                } else if (kind == Weather.STORM) {
                     Path bolt = new Path();
                     bolt.moveTo(cx + u * 0.12f, yb + u * 0.02f);
                     bolt.lineTo(cx - u * 0.24f, yb + u * 0.42f);
@@ -82,6 +102,15 @@ final class WeatherIcon {
                     for (float x : xs) c.drawLine(cx + x * u + slant, y0, cx + x * u, y1, p);
                 }
             }
+        }
+    }
+
+    /** Flocon de neige : trois traits croisés à 60°. */
+    private static void flake(Canvas c, Paint p, float x, float y, float r) {
+        for (int i = 0; i < 3; i++) {
+            double a = Math.PI / 3 * i + Math.PI / 2;
+            float dx = (float) Math.cos(a) * r, dy = (float) Math.sin(a) * r;
+            c.drawLine(x - dx, y - dy, x + dx, y + dy, p);
         }
     }
 

@@ -17,7 +17,7 @@ Trois onglets :
   (la journée entière le matin, l'après-midi à partir de midi, la soirée à partir de 17 h, la nuit après 22 h),
   une phrase sur la pluie des 2 prochaines heures, et les 12 prochaines heures en icônes (défilement horizontal).
 - **Météo** : d’hier à J+7, une liste qui défile, une ligne par heure (la nuit regroupée en 0–3h et 3–6h) :
-  icône météo (soleil, nuages, pluie, orage, brouillard ; lune la nuit), minutes de soleil, millimètres de pluie,
+  icône météo (soleil, nuages, pluie, orage, neige faible / modérée / forte, brouillard seul ou avec soleil voilé ; lune la nuit), minutes de soleil, millimètres de pluie,
   température, vitesse du vent en km/h et sa direction. Le bandeau des jours défile avec la liste ;
   seuls le lieu et les onglets restent fixes. La liste s'ouvre sur l'heure en cours.
 - **Éphéméride** : fête du jour selon le pays (France, Pologne, Allemagne, Tchéquie, Suède, Norvège, Danemark ;

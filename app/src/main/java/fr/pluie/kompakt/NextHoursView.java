@@ -73,7 +73,7 @@ public class NextHoursView extends View {
             WeatherIcon.draw(c, x.kind, x.night, cx, ts * 1.5f + icon / 2f, icon, Ui.INK, Ui.BG);
             float y = ts * 1.5f + icon + ts * 1.2f;
             c.drawText(Double.isNaN(x.temp) ? "" : Fmt.deg(x.temp), cx, y, value);
-            c.drawText(!x.has ? L.t("nd") : x.mm >= 0.05 ? Fmt.mm(x.mm) + " mm" : "–", cx, y + ts * 1.3f, label);
+            c.drawText(!x.has ? L.t("nd") : x.snowCm >= 0.05 ? Fmt.mm(x.snowCm) + " cm" : x.mm >= 0.05 ? Fmt.mm(x.mm) + " mm" : "–", cx, y + ts * 1.3f, label);
         }
     }
 }

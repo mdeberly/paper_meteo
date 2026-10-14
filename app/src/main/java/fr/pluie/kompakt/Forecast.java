@@ -29,7 +29,7 @@ public class Forecast {
 
     public static final class Current {
         public double temp = Double.NaN, feels = Double.NaN, wind = Double.NaN, windDir = Double.NaN;
-        public double cloud = -1, precip, visibility = Double.NaN;
+        public double cloud = -1, precip, visibility = Double.NaN, snowfall;
         public int code = -1;
         public boolean day = true;
     }
@@ -58,9 +58,10 @@ public class Forecast {
         JSONArray windDir = hourly.optJSONArray("wind_direction_10m");
         JSONArray direct = hourly.optJSONArray("direct_radiation");
         JSONArray vis = hourly.optJSONArray("visibility");
+        JSONArray snow = hourly.optJSONArray("snowfall");
         JSONObject cur = o.optJSONObject("current");
         Forecast f = new Forecast(zone, sun != null && cloud != null && temp != null && code != null
-                && wind != null && windDir != null && direct != null && vis != null && cur != null);
+                && wind != null && windDir != null && direct != null && vis != null && snow != null && cur != null);
         for (int i = 0; i < times.length(); i++) {
             LocalDateTime slotStart = LocalDateTime.parse(times.getString(i)).minusHours(1);
             LocalDate d = slotStart.toLocalDate();
@@ -78,6 +79,7 @@ public class Forecast {
             put(day.windDir, windDir, i, h, 1);
             put(day.direct, direct, i, h, 1);
             put(day.vis, vis, i, h, 1);
+            put(day.snow, snow, i, h, 1);
             if (code != null && i < code.length() && !code.isNull(i)) day.code[h] = code.getInt(i);
         }
         if (o.has("latitude") && direct != null) {
@@ -94,6 +96,7 @@ public class Forecast {
             c.precip = cur.optDouble("precipitation", 0);
             c.code = cur.optInt("weather_code", -1);
             c.visibility = cur.optDouble("visibility", Double.NaN);
+            c.snowfall = cur.optDouble("snowfall", 0);
             c.day = cur.optInt("is_day", 1) == 1;
             f.current = c;
         }

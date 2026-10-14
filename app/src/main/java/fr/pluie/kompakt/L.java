@@ -150,6 +150,8 @@ final class L {
         put("col_wind", "Vent", "Wind", "Wind", "Viento", "Vento", "Vento", "Wiatr");
         put("day_rain", "Pluie {0} mm", "Rain {0} mm", "Regen {0} mm", "Lluvia {0} mm", "Pioggia {0} mm",
                 "Chuva {0} mm", "Deszcz {0} mm");
+        put("day_snow", "neige {0} cm", "snow {0} cm", "Schnee {0} cm", "nieve {0} cm", "neve {0} cm", "neve {0} cm",
+                "śnieg {0} cm");
         put("day_sun", "soleil {0} sur {1}", "sun {0} of {1}", "Sonne {0} von {1}", "sol {0} de {1}",
                 "sole {0} su {1}", "sol {0} de {1}", "słońce {0} z {1}");
         put("partial", "(partiel)", "(partial)", "(unvollständig)", "(parcial)", "(parziale)", "(parcial)", "(niepełne)");
@@ -300,6 +302,23 @@ final class L {
                 "cielo coperto|molto nuvoloso|nuvole e schiarite|qualche nuvola|cielo sereno",
                 "céu encoberto|muito nublado|nuvens e abertas|algumas nuvens|céu limpo",
                 "zachmurzenie całkowite|duże zachmurzenie|chmury i przejaśnienia|niewielkie zachmurzenie|bezchmurnie");
+        put("snow_light", "neige faible", "light snow", "leichter Schneefall", "nieve débil", "neve debole",
+                "neve fraca", "słaby śnieg");
+        put("snow_moderate", "neige modérée", "moderate snow", "mäßiger Schneefall", "nieve moderada", "neve moderata",
+                "neve moderada", "umiarkowany śnieg");
+        put("snow_heavy", "fortes chutes de neige", "heavy snow", "starker Schneefall", "nevadas fuertes",
+                "forti nevicate", "neve forte", "intensywne opady śniegu");
+        put("n2_snow_now", "De la neige est prévue en ce moment, jusqu'à au moins {0}.",
+                "Snow expected now, until at least {0}.", "Jetzt Schneefall, mindestens bis {0}.",
+                "Nieve prevista ahora, hasta al menos las {0}.", "Neve prevista ora, almeno fino alle {0}.",
+                "Neve prevista agora, pelo menos até às {0}.", "Teraz śnieg, co najmniej do {0}.");
+        put("n2_snow_stop", "De la neige est prévue en ce moment ; elle devrait cesser vers {0}.",
+                "Snow expected now; it should stop around {0}.", "Jetzt Schneefall; er sollte gegen {0} aufhören.",
+                "Nieve prevista ahora; debería parar hacia las {0}.", "Neve prevista ora; dovrebbe smettere verso le {0}.",
+                "Neve prevista agora; deve parar por volta das {0}.", "Teraz śnieg; powinien ustać około {0}.");
+        put("n2_snow_next", "De la neige est attendue vers {0}.", "Snow expected around {0}.",
+                "Gegen {0} Schneefall erwartet.", "Nieve prevista hacia las {0}.", "Neve prevista verso le {0}.",
+                "Neve prevista por volta das {0}.", "Śnieg około {0}.");
         put("fog", "brouillard", "fog", "Nebel", "niebla", "nebbia", "nevoeiro", "mgła");
         put("dry", "temps sec", "dry", "trocken", "tiempo seco", "tempo asciutto", "tempo seco", "bez opadów");
         put("drops", "quelques gouttes possibles", "a few drops possible", "vereinzelt Tropfen", "algunas gotas posibles",

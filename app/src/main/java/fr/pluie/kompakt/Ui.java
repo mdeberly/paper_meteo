@@ -36,6 +36,7 @@ final class Ui {
     static final int CLOUD_FILL = 0xFFFFFFFF;
     static final int RAIN = 0xFF3D7CC9;
     static final int BOLT = 0xFFDB9A00;
+    static final int SNOW = 0xFF5B8FD0;
 
     // Grande lune de l'éphéméride : partie éclairée, partie dans l'ombre, contour.
     static final int MOON_LIT = COLOR ? 0xFFF5E2A8 : 0xFFFFFFFF;

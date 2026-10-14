@@ -15,11 +15,31 @@ final class Weather {
 
     // Types d'icône.
     static final int NONE = -1, CLEAR = 0, FEW_CLOUDS = 1, MANY_CLOUDS = 2, OVERCAST = 3,
-            LIGHT_RAIN = 4, HEAVY_RAIN = 5, STORM = 6, FOG = 7;
+            LIGHT_RAIN = 4, HEAVY_RAIN = 5, STORM = 6, FOG = 7,
+            SNOW_LIGHT = 8, SNOW_MODERATE = 9, SNOW_HEAVY = 10, FOG_SUN = 11;
 
     /** Brouillard : code temps 45 ou 48, ou visibilité inférieure à 1 km (définition de l'OMM). */
     static boolean isFog(int code, double visibility) {
         return code == 45 || code == 48 || visibility < 1000;
+    }
+
+    /**
+     * Brouillard léger laissant deviner le soleil : de jour, visibilité d'au moins 400 m
+     * ou ciel dégagé au-dessus de la couche (sinon : brouillard seul).
+     */
+    static boolean isVeiled(boolean night, double visibility, double clear) {
+        return !night && (visibility >= 400 || clear >= 0.4);
+    }
+
+    /**
+     * Intensité de la neige : 0 = pas de neige, 1 = faible, 2 = modérée, 3 = forte.
+     * D'après le code temps (71/77/85 faible, 73 modérée, 75/86 forte) et la quantité tombée dans l'heure
+     * (moins de 0,4 cm faible, moins de 1,5 cm modérée, au-delà forte) ; on garde la plus forte des deux.
+     */
+    static int snowLevel(int code, double cm) {
+        int byCode = code == 75 || code == 86 ? 3 : code == 73 ? 2 : code == 71 || code == 77 || code == 85 ? 1 : 0;
+        int byAmount = cm >= 1.5 ? 3 : cm >= 0.4 ? 2 : cm >= 0.05 ? 1 : 0;
+        return Math.max(byCode, byAmount);
     }
 
     /** Une heure de prévision (créneau de h à h+1, heure locale). */
@@ -34,7 +54,10 @@ final class Weather {
         double wind = Double.NaN, windDir = Double.NaN;
         /** 0 = couvert … 1 = dégagé, -1 si inconnu. */
         double clear = -1;
-        boolean wet, heavy, storm, fog;
+        boolean wet, heavy, storm, fog, veiled;
+        /** Neige : intensité (0 à 3) et quantité tombée dans l'heure, en cm. */
+        int snow;
+        double snowCm;
         int kind = NONE;
     }
 
@@ -72,22 +95,30 @@ final class Weather {
                 if (d.cloud.has[x.h]) c = Math.max(c, 1 - d.cloud.v[x.h] / 100);
                 x.clear = c;
                 x.storm = code >= 95;
-                x.heavy = x.mm >= 2.5 || code == 65 || code == 67 || code == 75 || code == 82 || code == 86;
+                x.snowCm = d.snow.has[x.h] ? d.snow.v[x.h] : 0;
+                x.snow = snowLevel(code, x.snowCm);
+                x.heavy = x.snow == 0 && (x.mm >= 2.5 || code == 65 || code == 67 || code == 82);
                 x.wet = x.storm || x.heavy || x.mm >= 0.1
                         || (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 86);
-                x.fog = isFog(code, d.vis.has[x.h] ? d.vis.v[x.h] : Double.NaN);
-                x.kind = classify(x.storm, x.heavy, x.wet, x.fog, c);
+                double vis = d.vis.has[x.h] ? d.vis.v[x.h] : Double.NaN;
+                x.fog = isFog(code, vis);
+                x.veiled = x.fog && isVeiled(x.night, vis, c);
+                x.kind = classify(x.storm, x.snow, x.heavy, x.wet, x.fog, x.veiled, c);
             }
             out.add(x);
         }
         return out;
     }
 
-    private static int classify(boolean storm, boolean heavy, boolean wet, boolean fog, double clear) {
+    private static int classify(boolean storm, int snow, boolean heavy, boolean wet, boolean fog, boolean veiled,
+                                double clear) {
         if (storm) return STORM;
+        if (snow >= 3) return SNOW_HEAVY;
+        if (snow == 2) return SNOW_MODERATE;
+        if (snow == 1) return SNOW_LIGHT;
         if (heavy) return HEAVY_RAIN;
         if (wet) return LIGHT_RAIN;
-        if (fog) return FOG;
+        if (fog) return veiled ? FOG_SUN : FOG;
         if (clear >= 0.75) return CLEAR;
         if (clear >= 0.45) return FEW_CLOUDS;
         if (clear >= 0.15) return MANY_CLOUDS;
@@ -97,17 +128,24 @@ final class Weather {
 
     /**
      * Icône résumant une journée : orage s'il y en a, forte pluie (≥ 8 mm ou une heure ≥ 4 mm),
-     * pluie (≥ 1 mm), brouillard (au moins 3 heures de jour), sinon le ciel moyen des heures de jour.
+     * neige (forte dès 5 cm ou une heure forte, modérée dès 1 cm), pluie (≥ 1 mm),
+     * brouillard (au moins 3 heures de jour), sinon le ciel moyen des heures de jour.
      */
     static int dayKind(Forecast f, ZoneId zone, double lat, double lon, LocalDate date) {
         boolean any = false, storm = false;
         double total = 0, max = 0, sum = 0;
-        int n = 0, fog = 0;
+        int n = 0, fog = 0, veiled = 0, snowMax = 0;
+        double snowCm = 0;
         for (Hour x : hours(f, zone, lat, lon, date, 0, 24)) {
             if (!x.has) continue;
             any = true;
             storm |= x.storm && x.daylight > 0;
-            if (x.fog && x.daylight > 0) fog++;
+            snowCm += x.snowCm;
+            snowMax = Math.max(snowMax, x.snow);
+            if (x.fog && x.daylight > 0) {
+                fog++;
+                if (x.veiled) veiled++;
+            }
             total += x.mm;
             max = Math.max(max, x.mm);
             if (x.daylight > 0 && x.clear >= 0) {
@@ -116,24 +154,27 @@ final class Weather {
             }
         }
         if (!any) return NONE;
-        return classify(storm, total >= 8 || max >= 4, total >= 1, fog >= 3, n > 0 ? sum / n : -1);
+        int snow = snowMax == 0 ? 0 : snowCm >= 5 || snowMax >= 3 ? 3 : snowCm >= 1 ? 2 : 1;
+        return classify(storm, snow, total >= 8 || max >= 4, total >= 1, fog >= 3, veiled * 2 >= fog,
+                n > 0 ? sum / n : -1);
     }
 
     /** Icône des conditions actuelles. */
     static int currentKind(Forecast.Current c) {
         int code = c.code;
         boolean storm = code >= 95;
-        boolean heavy = code == 65 || code == 67 || code == 75 || code == 82 || code == 86 || c.precip >= 2.5;
+        int snow = snowLevel(code, c.snowfall);
+        boolean heavy = snow == 0 && (code == 65 || code == 67 || code == 82 || c.precip >= 2.5);
         boolean wet = c.precip >= 0.1 || (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 86);
         double clear = c.cloud >= 0 ? 1 - c.cloud / 100 : code == 0 ? 1 : code == 1 ? 0.7 : code == 2 ? 0.4 : code == 3 ? 0 : -1;
-        return classify(storm, heavy, wet, isFog(code, c.visibility), clear);
+        return classify(storm, snow, heavy, wet, isFog(code, c.visibility), isVeiled(!c.day, c.visibility, clear), clear);
     }
 
     /** Icône d'un groupe d'heures (ex. 0–3h) : le temps le plus marquant, sinon le ciel moyen. */
     static int kindOf(List<Hour> hs) {
         boolean any = false, storm = false, heavy = false, wet = false;
         double sum = 0;
-        int n = 0, fog = 0;
+        int n = 0, fog = 0, veiled = 0, snow = 0;
         for (Hour x : hs) {
             if (!x.has) continue;
             any = true;
@@ -141,13 +182,15 @@ final class Weather {
             heavy |= x.heavy;
             wet |= x.wet;
             if (x.fog) fog++;
+            if (x.veiled) veiled++;
+            snow = Math.max(snow, x.snow);
             if (x.clear >= 0) {
                 sum += x.clear;
                 n++;
             }
         }
         if (!any) return NONE;
-        return classify(storm, heavy, wet, fog * 2 >= hs.size(), n > 0 ? sum / n : -1);
+        return classify(storm, snow, heavy, wet, fog * 2 >= hs.size(), veiled * 2 >= fog, n > 0 ? sum / n : -1);
     }
 
     // ---------------------------------------------------------------- résumé écrit
@@ -280,6 +323,30 @@ final class Weather {
         }
         if (wet == 0) return L.t("dry");
 
+        // Neige : phrase dédiée (« neige faible entre 6 h et 9 h (2 cm) »), précédée de la pluie
+        // s'il pleut aussi à d'autres heures.
+        int snowFirst = -1, snowLast = -1, snowHours = 0, snowMax = 0;
+        double snowCm = 0, rainOnly = 0;
+        for (int i = 0; i < hs.size(); i++) {
+            Hour x = hs.get(i);
+            if (x.snow > 0) {
+                if (snowFirst < 0) snowFirst = i;
+                snowLast = i;
+                snowHours++;
+                snowCm += x.snowCm;
+                snowMax = Math.max(snowMax, x.snow);
+            } else if (x.wet) {
+                rainOnly++;
+            }
+        }
+        if (snowHours > 0) {
+            int level = snowCm >= 5 || snowMax >= 3 ? 3 : snowCm >= 1 || snowMax >= 2 ? 2 : 1;
+            String snow = L.t(level == 3 ? "snow_heavy" : level == 2 ? "snow_moderate" : "snow_light")
+                    + (snowHours < hs.size() * 0.75 ? when(hs, snowFirst, snowLast) : "")
+                    + (snowCm >= 0.5 ? " (" + Fmt.total(snowCm) + "\u00a0cm)" : "");
+            return rainOnly > 0 ? L.t("rain") + ", " + snow : snow;
+        }
+
         String when = wet < hs.size() * 0.75 ? when(hs, first, last) : "";
         String amount = total >= 0.5 ? " (" + Fmt.total(total) + "\u00a0mm)" : "";
         if (firstStorm >= 0) return L.t("rain") + when + amount + L.t("storm") + when(hs, firstStorm, lastStorm);
@@ -300,11 +367,13 @@ final class Weather {
         if (a.wet && b.wet) {
             double mm = a.mm + b.mm;
             if (a.storm || b.storm) return L.f("n2_storm_now", until);
+            if (a.snow > 0 || b.snow > 0) return L.f("n2_snow_now", until);
             if (mm < 0.5) return L.f("n2_drops_now", until);
             return L.f("n2_rain_now", until, Fmt.total(mm));
         }
-        if (a.wet) return L.f("n2_stop", next);
+        if (a.wet) return L.f(a.snow > 0 ? "n2_snow_stop" : "n2_stop", next);
         if (b.storm) return L.f("n2_storm_next", next);
+        if (b.snow > 0) return L.f("n2_snow_next", next);
         if (b.heavy) return L.f("n2_heavy_next", next, Fmt.total(b.mm));
         if (b.mm < 0.5) return L.f("n2_drops_next", next);
         return L.f("n2_rain_next", next, Fmt.total(b.mm));

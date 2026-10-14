@@ -497,7 +497,10 @@ public class MainActivity extends Activity {
         String[] rainTotals = new String[days.size()];
         for (int i = 0; i < rainTotals.length; i++) {
             Day x = days.get(i);
-            rainTotals[i] = x.rain.hasAny() ? Fmt.total(x.rain.total()) + " mm" : L.t("nd");
+            // Neige : hauteur tombée en cm ; sinon cumul de pluie en mm.
+            rainTotals[i] = !x.rain.hasAny() ? L.t("nd")
+                    : x.snow.total() >= 0.1 ? Fmt.total(x.snow.total()) + " cm"
+                    : Fmt.total(x.rain.total()) + " mm";
         }
         int[] dayIcons = new int[days.size()];
         for (int i = 0; i < dayIcons.length; i++) {
@@ -549,6 +552,7 @@ public class MainActivity extends Activity {
             totalView.setText(L.t("no_day_data"));
         } else {
             String t = L.f("day_rain", Fmt.total(d.rain.total()));
+            if (d.snow.total() >= 0.1) t += "  ·  " + L.f("day_snow", Fmt.total(d.snow.total()));
             if (d.sun.hasAny()) t += "  ·  " + L.f("day_sun", Fmt.duration(d.sun.total()), Fmt.duration(sun.dayMinutes()));
             if (!d.rain.isComplete()) t += "  " + L.t("partial");
             totalView.setText(t);
@@ -566,10 +570,11 @@ public class MainActivity extends Activity {
             if (c.highlight) current = cells.size();
             boolean hasRain = false, hasSun = false, dark = true;
             int nights = 0, tn = 0, wn = 0;
-            double rain = 0, sunMin = 0, tsum = 0, wsum = 0, wx = 0, wy = 0;
+            double rain = 0, sunMin = 0, tsum = 0, wsum = 0, wx = 0, wy = 0, snowCm = 0;
             for (int h = a; h < b; h++) {
                 Weather.Hour x = hs.get(h);
                 if (d.rain.has[h]) { hasRain = true; rain += d.rain.v[h]; }
+                if (d.snow.has[h]) snowCm += d.snow.v[h];
                 if (d.sun.has[h]) { hasSun = true; sunMin += d.sun.v[h]; }
                 if (x.daylight > 0) dark = false;
                 if (x.night) nights++;
@@ -584,7 +589,7 @@ public class MainActivity extends Activity {
                     }
                 }
             }
-            c.rain = hasRain ? Fmt.mm(rain) : L.t("nd");
+            c.rain = !hasRain ? L.t("nd") : snowCm >= 0.05 ? Fmt.mm(snowCm) + "\u00a0cm" : Fmt.mm(rain);
             c.sun = !hasSun ? L.t("nd") : dark ? "" : Fmt.minutes(sunMin);
             if (tn > 0) c.temp = Fmt.deg(tsum / tn);
             if (wn > 0) {
@@ -668,9 +673,9 @@ public class MainActivity extends Activity {
         final String url = String.format(Locale.US,
                 "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
                         + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m,"
-                        + "wind_speed_10m,wind_direction_10m,direct_radiation,visibility"
+                        + "wind_speed_10m,wind_direction_10m,direct_radiation,visibility,snowfall"
                         + "&current=temperature_2m,apparent_temperature,weather_code,cloud_cover,precipitation,"
-                        + "wind_speed_10m,wind_direction_10m,is_day,visibility"
+                        + "wind_speed_10m,wind_direction_10m,is_day,visibility,snowfall"
                         + "&past_days=1&forecast_days=9&timezone=auto",
                 lat(), lon());
         io.execute(() -> {
