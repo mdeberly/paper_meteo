@@ -25,6 +25,18 @@ jobs:
           cp app/build/outputs/apk/eink/release/app-eink-release.apk PaperMeteo-EInk.apk
           cp app/build/outputs/apk/color/release/app-color-release.apk PaperMeteo-Color.apk
 
+      # Contrôle des APK : signature valide, paquet, numéro de version et empreinte du certificat
+      # (l'empreinte doit rester la même d'une version à l'autre pour installer par-dessus).
+      - name: Vérification des APK
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          for f in PaperMeteo-EInk.apk PaperMeteo-Color.apk; do
+            echo "== $f"
+            unzip -tq "$f"
+            "$BT/apksigner" verify --verbose --print-certs "$f" | grep -E "Verified|SHA-256|scheme"
+            "$BT/aapt2" dump badging "$f" | grep -E "^package|sdkVersion"
+          done
+
       # Variante E Ink (Mudita Kompakt…) : s'installe par-dessus les versions précédentes.
       - uses: actions/upload-artifact@v4
         with:
