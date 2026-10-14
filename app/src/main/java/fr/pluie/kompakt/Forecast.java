@@ -30,6 +30,7 @@ public class Forecast {
     public static final class Current {
         public double temp = Double.NaN, feels = Double.NaN, wind = Double.NaN, windDir = Double.NaN;
         public double cloud = -1, precip, visibility = Double.NaN, snowfall;
+        public double rh = Double.NaN, dew = Double.NaN, lowCloud = Double.NaN;
         public int code = -1;
         public boolean day = true;
     }
@@ -59,9 +60,13 @@ public class Forecast {
         JSONArray direct = hourly.optJSONArray("direct_radiation");
         JSONArray vis = hourly.optJSONArray("visibility");
         JSONArray snow = hourly.optJSONArray("snowfall");
+        JSONArray rh = hourly.optJSONArray("relative_humidity_2m");
+        JSONArray dew = hourly.optJSONArray("dew_point_2m");
+        JSONArray lowCloud = hourly.optJSONArray("cloud_cover_low");
         JSONObject cur = o.optJSONObject("current");
         Forecast f = new Forecast(zone, sun != null && cloud != null && temp != null && code != null
-                && wind != null && windDir != null && direct != null && vis != null && snow != null && cur != null);
+                && wind != null && windDir != null && direct != null && vis != null && snow != null && rh != null && dew != null && lowCloud != null
+                && cur != null);
         for (int i = 0; i < times.length(); i++) {
             LocalDateTime slotStart = LocalDateTime.parse(times.getString(i)).minusHours(1);
             LocalDate d = slotStart.toLocalDate();
@@ -80,6 +85,9 @@ public class Forecast {
             put(day.direct, direct, i, h, 1);
             put(day.vis, vis, i, h, 1);
             put(day.snow, snow, i, h, 1);
+            put(day.rh, rh, i, h, 1);
+            put(day.dew, dew, i, h, 1);
+            put(day.lowCloud, lowCloud, i, h, 1);
             if (code != null && i < code.length() && !code.isNull(i)) day.code[h] = code.getInt(i);
         }
         if (o.has("latitude") && direct != null) {
@@ -97,6 +105,9 @@ public class Forecast {
             c.code = cur.optInt("weather_code", -1);
             c.visibility = cur.optDouble("visibility", Double.NaN);
             c.snowfall = cur.optDouble("snowfall", 0);
+            c.rh = cur.optDouble("relative_humidity_2m", Double.NaN);
+            c.dew = cur.optDouble("dew_point_2m", Double.NaN);
+            c.lowCloud = cur.optDouble("cloud_cover_low", Double.NaN);
             c.day = cur.optInt("is_day", 1) == 1;
             f.current = c;
         }

@@ -44,6 +44,18 @@ final class Weather {
     }
 
     /**
+     * Brouillard probable d'après l'état de l'air, quand le modèle ne l'annonce ni par son code ni par
+     * sa visibilité : air saturé (humidité ≥ 97 % ou température à moins de 1 °C du point de rosée),
+     * vent faible (≤ 10 km/h), et nuages bas couvrant au moins 80 % du ciel — ou nuit, où le brouillard
+     * de rayonnement se forme souvent sous un ciel dégagé.
+     */
+    static boolean isFoggyAir(double rh, double temp, double dew, double wind, double lowCloud, boolean night) {
+        boolean saturated = rh >= 97 || (!Double.isNaN(temp) && !Double.isNaN(dew) && temp - dew <= 1);
+        boolean calm = !Double.isNaN(wind) && wind <= 10;
+        return saturated && calm && (lowCloud >= 80 || night);
+    }
+
+    /**
      * Intensité de la neige : 0 = pas de neige, 1 = faible, 2 = modérée, 3 = forte.
      * D'après le code temps (71/77/85 faible, 73 modérée, 75/86 forte) et la quantité tombée dans l'heure
      * (moins de 0,4 cm faible, moins de 1,5 cm modérée, au-delà forte) ; on garde la plus forte des deux.
@@ -116,8 +128,14 @@ final class Weather {
                 x.wet = x.storm || x.heavy || x.mm >= 0.1
                         || (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 86);
                 double vis = d.vis.has[x.h] ? d.vis.v[x.h] : Double.NaN;
-                x.fog = isFog(code, vis);
-                x.veiled = x.fog && isVeiled(x.night, vis, c);
+                boolean byModel = isFog(code, vis);
+                boolean byAir = isFoggyAir(d.rh.has[x.h] ? d.rh.v[x.h] : Double.NaN, x.temp,
+                        d.dew.has[x.h] ? d.dew.v[x.h] : Double.NaN, x.wind,
+                        d.lowCloud.has[x.h] ? d.lowCloud.v[x.h] : Double.NaN, x.night);
+                // Indice d'air saturé : seulement par temps sec ou bruine (pas sous la pluie modérée ou la neige).
+                x.fog = byModel || (byAir && x.rain < 2 && x.snow == 0);
+                // Soleil voilé : la visibilité du modèle ne compte que si elle annonce elle-même le brouillard.
+                x.veiled = x.fog && isVeiled(x.night, vis < 1000 ? vis : Double.NaN, c);
                 x.kind = classify(x.storm, x.snow, x.wet && x.snow == 0 ? Math.max(1, x.rain) : 0, x.fog, x.veiled, c);
             }
             out.add(x);
@@ -183,7 +201,10 @@ final class Weather {
         int snow = snowLevel(code, c.snowfall);
         int rain = snow == 0 ? rainLevel(code, c.precip) : 0;
         double clear = c.cloud >= 0 ? 1 - c.cloud / 100 : code == 0 ? 1 : code == 1 ? 0.7 : code == 2 ? 0.4 : code == 3 ? 0 : -1;
-        return classify(storm, snow, rain, isFog(code, c.visibility), isVeiled(!c.day, c.visibility, clear), clear);
+        boolean fog = isFog(code, c.visibility)
+                || isFoggyAir(c.rh, c.temp, c.dew, c.wind, c.lowCloud, !c.day);
+        double vis = c.visibility < 1000 ? c.visibility : Double.NaN;
+        return classify(storm, snow, rain, fog, isVeiled(!c.day, vis, clear), clear);
     }
 
     /** Icône d'un groupe d'heures (ex. 0–3h) : le temps le plus marquant, sinon le ciel moyen. */

@@ -15,6 +15,9 @@ public class Day {
     public final Series direct = new Series(); // rayonnement solaire direct moyen de l'heure, W/m²
     public final Series vis = new Series();    // visibilité, m
     public final Series snow = new Series();   // chute de neige de l'heure, cm
+    public final Series rh = new Series();     // humidité relative à 2 m, %
+    public final Series dew = new Series();    // point de rosée à 2 m, °C
+    public final Series lowCloud = new Series(); // couverture nuageuse basse, %
     /** Code temps WMO d'Open-Meteo (95 et plus = orage), -1 si inconnu. */
     public final int[] code = new int[24];
 
