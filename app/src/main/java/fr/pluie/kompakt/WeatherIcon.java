@@ -36,6 +36,19 @@ final class WeatherIcon {
                 body(c, p, night, cx - u * 0.38f, cy - u * 0.4f, u * 0.58f, night ? moonC : sunC, bg, stroke);
                 cloud(c, p, cx - u * 0.82f, cy - u * 0.28f, u * 1.75f, cloudC, cloudFill, stroke);
                 break;
+            case Weather.FOG: {
+                // Soleil (ou lune) voilé par trois bandes de brouillard ; chaque bande est détourée
+                // de la couleur du fond pour bien se détacher de l'astre.
+                body(c, p, night, cx - u * 0.2f, cy - u * 0.38f, u * 0.62f, night ? moonC : sunC, bg, stroke);
+                float[][] bands = {{-0.78f, 0.62f, 0.02f}, {-0.62f, 0.78f, 0.36f}, {-0.78f, 0.5f, 0.7f}};
+                for (int pass = 0; pass < 2; pass++) {
+                    p.setStyle(Paint.Style.STROKE);
+                    p.setStrokeWidth(pass == 0 ? stroke * 3.2f : stroke * 1.4f);
+                    p.setColor(pass == 0 ? bg : cloudC);
+                    for (float[] b : bands) c.drawLine(cx + b[0] * u, cy + b[2] * u, cx + b[1] * u, cy + b[2] * u, p);
+                }
+                break;
+            }
             case Weather.OVERCAST:
                 cloud(c, p, cx - u * 0.95f, cy - u * 0.55f, u * 1.9f, cloudC, cloudFill, stroke);
                 break;

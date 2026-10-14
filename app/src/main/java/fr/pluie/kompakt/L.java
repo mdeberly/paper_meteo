@@ -300,6 +300,7 @@ final class L {
                 "cielo coperto|molto nuvoloso|nuvole e schiarite|qualche nuvola|cielo sereno",
                 "céu encoberto|muito nublado|nuvens e abertas|algumas nuvens|céu limpo",
                 "zachmurzenie całkowite|duże zachmurzenie|chmury i przejaśnienia|niewielkie zachmurzenie|bezchmurnie");
+        put("fog", "brouillard", "fog", "Nebel", "niebla", "nebbia", "nevoeiro", "mgła");
         put("dry", "temps sec", "dry", "trocken", "tiempo seco", "tempo asciutto", "tempo seco", "bez opadów");
         put("drops", "quelques gouttes possibles", "a few drops possible", "vereinzelt Tropfen", "algunas gotas posibles",
                 "qualche goccia possibile", "algumas gotas possíveis", "możliwe pojedyncze krople");
