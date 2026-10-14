@@ -95,10 +95,13 @@ final class WeatherIcon {
                 } else {
                     p.setStyle(Paint.Style.STROKE);
                     p.setStrokeWidth(stroke);
-                    boolean heavy = kind == Weather.HEAVY_RAIN;
-                    float[] xs = heavy ? new float[]{-0.5f, -0.17f, 0.16f, 0.49f} : new float[]{-0.3f, 0.22f};
-                    float y0 = yb + u * (heavy ? 0.12f : 0.18f), y1 = yb + u * (heavy ? 0.7f : 0.48f);
-                    float slant = u * (heavy ? 0.18f : 0.1f);
+                    // Pluie faible : 2 gouttes courtes ; modérée : 3 traits ; forte : 4 longs traits serrés.
+                    boolean heavy = kind == Weather.HEAVY_RAIN, moderate = kind == Weather.MODERATE_RAIN;
+                    float[] xs = heavy ? new float[]{-0.5f, -0.17f, 0.16f, 0.49f}
+                            : moderate ? new float[]{-0.42f, 0f, 0.42f} : new float[]{-0.3f, 0.22f};
+                    float y0 = yb + u * (heavy ? 0.12f : moderate ? 0.15f : 0.18f);
+                    float y1 = yb + u * (heavy ? 0.7f : moderate ? 0.6f : 0.42f);
+                    float slant = u * (heavy ? 0.18f : moderate ? 0.14f : 0.08f);
                     for (float x : xs) c.drawLine(cx + x * u + slant, y0, cx + x * u, y1, p);
                 }
             }

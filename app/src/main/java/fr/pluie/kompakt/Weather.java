@@ -16,7 +16,19 @@ final class Weather {
     // Types d'icône.
     static final int NONE = -1, CLEAR = 0, FEW_CLOUDS = 1, MANY_CLOUDS = 2, OVERCAST = 3,
             LIGHT_RAIN = 4, HEAVY_RAIN = 5, STORM = 6, FOG = 7,
-            SNOW_LIGHT = 8, SNOW_MODERATE = 9, SNOW_HEAVY = 10, FOG_SUN = 11;
+            SNOW_LIGHT = 8, SNOW_MODERATE = 9, SNOW_HEAVY = 10, FOG_SUN = 11, MODERATE_RAIN = 12;
+
+    /**
+     * Intensité de la pluie : 0 = pas de pluie, 1 = faible, 2 = modérée, 3 = forte.
+     * Échelle horaire du Met Office (faible < 0,5 mm/h, modérée de 0,5 à 4 mm/h, forte au-delà) et code
+     * temps d'Open-Meteo (bruine, 61/66/80 faible ; 63/81 modérée ; 65/67/82 forte) ; on garde le plus fort.
+     */
+    static int rainLevel(int code, double mm) {
+        int byCode = code == 65 || code == 67 || code == 82 ? 3 : code == 63 || code == 81 ? 2
+                : (code >= 51 && code <= 57) || code == 61 || code == 66 || code == 80 ? 1 : 0;
+        int byAmount = mm >= 4 ? 3 : mm >= 0.5 ? 2 : mm >= 0.1 ? 1 : 0;
+        return Math.max(byCode, byAmount);
+    }
 
     /** Brouillard : code temps 45 ou 48, ou visibilité inférieure à 1 km (définition de l'OMM). */
     static boolean isFog(int code, double visibility) {
@@ -55,6 +67,8 @@ final class Weather {
         /** 0 = couvert … 1 = dégagé, -1 si inconnu. */
         double clear = -1;
         boolean wet, heavy, storm, fog, veiled;
+        /** Pluie : intensité de 0 à 3 (0 s'il neige). */
+        int rain;
         /** Neige : intensité (0 à 3) et quantité tombée dans l'heure, en cm. */
         int snow;
         double snowCm;
@@ -97,27 +111,29 @@ final class Weather {
                 x.storm = code >= 95;
                 x.snowCm = d.snow.has[x.h] ? d.snow.v[x.h] : 0;
                 x.snow = snowLevel(code, x.snowCm);
-                x.heavy = x.snow == 0 && (x.mm >= 2.5 || code == 65 || code == 67 || code == 82);
+                x.rain = x.snow == 0 ? rainLevel(code, x.mm) : 0;
+                x.heavy = x.rain == 3;
                 x.wet = x.storm || x.heavy || x.mm >= 0.1
                         || (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 86);
                 double vis = d.vis.has[x.h] ? d.vis.v[x.h] : Double.NaN;
                 x.fog = isFog(code, vis);
                 x.veiled = x.fog && isVeiled(x.night, vis, c);
-                x.kind = classify(x.storm, x.snow, x.heavy, x.wet, x.fog, x.veiled, c);
+                x.kind = classify(x.storm, x.snow, x.wet && x.snow == 0 ? Math.max(1, x.rain) : 0, x.fog, x.veiled, c);
             }
             out.add(x);
         }
         return out;
     }
 
-    private static int classify(boolean storm, int snow, boolean heavy, boolean wet, boolean fog, boolean veiled,
-                                double clear) {
+    /** @param rain intensité de la pluie, 0 à 3 */
+    private static int classify(boolean storm, int snow, int rain, boolean fog, boolean veiled, double clear) {
         if (storm) return STORM;
         if (snow >= 3) return SNOW_HEAVY;
         if (snow == 2) return SNOW_MODERATE;
         if (snow == 1) return SNOW_LIGHT;
-        if (heavy) return HEAVY_RAIN;
-        if (wet) return LIGHT_RAIN;
+        if (rain >= 3) return HEAVY_RAIN;
+        if (rain == 2) return MODERATE_RAIN;
+        if (rain == 1) return LIGHT_RAIN;
         if (fog) return veiled ? FOG_SUN : FOG;
         if (clear >= 0.75) return CLEAR;
         if (clear >= 0.45) return FEW_CLOUDS;
@@ -155,8 +171,9 @@ final class Weather {
         }
         if (!any) return NONE;
         int snow = snowMax == 0 ? 0 : snowCm >= 5 || snowMax >= 3 ? 3 : snowCm >= 1 ? 2 : 1;
-        return classify(storm, snow, total >= 8 || max >= 4, total >= 1, fog >= 3, veiled * 2 >= fog,
-                n > 0 ? sum / n : -1);
+        // Pluie sur la journée : forte dès 10 mm (ou une heure à 4 mm), modérée dès 3 mm, faible dès 1 mm.
+        int rain = total >= 10 || max >= 4 ? 3 : total >= 3 ? 2 : total >= 1 ? 1 : 0;
+        return classify(storm, snow, rain, fog >= 3, veiled * 2 >= fog, n > 0 ? sum / n : -1);
     }
 
     /** Icône des conditions actuelles. */
@@ -164,23 +181,21 @@ final class Weather {
         int code = c.code;
         boolean storm = code >= 95;
         int snow = snowLevel(code, c.snowfall);
-        boolean heavy = snow == 0 && (code == 65 || code == 67 || code == 82 || c.precip >= 2.5);
-        boolean wet = c.precip >= 0.1 || (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 86);
+        int rain = snow == 0 ? rainLevel(code, c.precip) : 0;
         double clear = c.cloud >= 0 ? 1 - c.cloud / 100 : code == 0 ? 1 : code == 1 ? 0.7 : code == 2 ? 0.4 : code == 3 ? 0 : -1;
-        return classify(storm, snow, heavy, wet, isFog(code, c.visibility), isVeiled(!c.day, c.visibility, clear), clear);
+        return classify(storm, snow, rain, isFog(code, c.visibility), isVeiled(!c.day, c.visibility, clear), clear);
     }
 
     /** Icône d'un groupe d'heures (ex. 0–3h) : le temps le plus marquant, sinon le ciel moyen. */
     static int kindOf(List<Hour> hs) {
-        boolean any = false, storm = false, heavy = false, wet = false;
+        boolean any = false, storm = false;
         double sum = 0;
-        int n = 0, fog = 0, veiled = 0, snow = 0;
+        int n = 0, fog = 0, veiled = 0, snow = 0, rain = 0;
         for (Hour x : hs) {
             if (!x.has) continue;
             any = true;
             storm |= x.storm;
-            heavy |= x.heavy;
-            wet |= x.wet;
+            if (x.wet && x.snow == 0) rain = Math.max(rain, Math.max(1, x.rain));
             if (x.fog) fog++;
             if (x.veiled) veiled++;
             snow = Math.max(snow, x.snow);
@@ -190,7 +205,7 @@ final class Weather {
             }
         }
         if (!any) return NONE;
-        return classify(storm, snow, heavy, wet, fog * 2 >= hs.size(), veiled * 2 >= fog, n > 0 ? sum / n : -1);
+        return classify(storm, snow, rain, fog * 2 >= hs.size(), veiled * 2 >= fog, n > 0 ? sum / n : -1);
     }
 
     // ---------------------------------------------------------------- résumé écrit
