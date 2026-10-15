@@ -240,6 +240,13 @@ final class L {
                 "Nessun luogo trovato", "Nenhum local encontrado", "Nie znaleziono miejsca");
         put("choose_place", "Choisir le lieu", "Choose a place", "Ort wählen", "Elegir lugar", "Scegli il luogo",
                 "Escolher o local", "Wybierz miejsce");
+        put("favorites", "Favoris", "Favourites", "Favoriten", "Favoritos", "Preferiti", "Favoritos", "Ulubione");
+        put("fav_add", "Ajouter « {0} » aux favoris", "Add “{0}” to favourites", "„{0}“ zu Favoriten hinzufügen",
+                "Añadir «{0}» a favoritos", "Aggiungi «{0}» ai preferiti", "Adicionar «{0}» aos favoritos",
+                "Dodaj „{0}” do ulubionych");
+        put("fav_remove", "Retirer « {0} » des favoris", "Remove “{0}” from favourites", "„{0}“ aus Favoriten entfernen",
+                "Quitar «{0}» de favoritos", "Rimuovi «{0}» dai preferiti", "Remover «{0}» dos favoritos",
+                "Usuń „{0}” z ulubionych");
         put("search_failed", "Recherche impossible (réseau ?)", "Search failed (network?)", "Suche fehlgeschlagen (Netz?)",
                 "Búsqueda imposible (¿red?)", "Ricerca non riuscita (rete?)", "Pesquisa impossível (rede?)",
                 "Wyszukiwanie nieudane (sieć?)");

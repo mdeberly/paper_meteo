@@ -46,7 +46,10 @@ public class NextHoursView extends View {
     @Override
     protected void onMeasure(int widthSpec, int heightSpec) {
         int n = hours == null ? 0 : hours.size();
-        setMeasuredDimension(Math.max(n * columnWidth(), MeasureSpec.getSize(widthSpec)), MeasureSpec.getSize(heightSpec));
+        // Hauteur imposée par la page ; si la page défile (résumé long), hauteur minimale lisible.
+        int min = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 180, getResources().getDisplayMetrics()));
+        int h = MeasureSpec.getMode(heightSpec) == MeasureSpec.UNSPECIFIED ? min : MeasureSpec.getSize(heightSpec);
+        setMeasuredDimension(Math.max(n * columnWidth(), MeasureSpec.getSize(widthSpec)), h);
     }
 
     @Override

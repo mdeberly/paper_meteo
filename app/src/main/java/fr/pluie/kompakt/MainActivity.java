@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
     private TextView saintView, feastView, riseView, setView, dayLengthView, phaseView, moonInfoView, nextPhasesView;
     private MoonView moonView;
 
-    private LinearLayout summaryView;
+    private ScrollView summaryView;
     private TextView summaryText, soonView;
     private CurrentView currentView;
     private NextHoursView nextHoursView;
@@ -307,7 +307,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams wlp = stripParams();
         wlp.height = dp(3 * 92); // 9 jours en 3 × 3, grandes cases avec une grande icône par jour
         content.addView(weatherStrip, wlp);
-        totalView = text(15, false);
+        totalView = text(19, false);
         totalView.setPadding(0, dp(6), 0, dp(4));
         content.addView(totalView);
         DayView header = new DayView(this, true);
@@ -389,7 +389,8 @@ public class MainActivity extends Activity {
         return p;
     }
 
-    private LinearLayout buildSummary() {
+    /** Page Résumé : défile verticalement si le texte est long, les 12 heures gardant une hauteur lisible. */
+    private ScrollView buildSummary() {
         LinearLayout p = new LinearLayout(this);
         p.setOrientation(LinearLayout.VERTICAL);
         // Météo actuelle, au-dessus du résumé.
@@ -403,10 +404,10 @@ public class MainActivity extends Activity {
         summaryText.setPadding(0, dp(4), 0, 0);
         p.addView(summaryText);
         p.addView(rule());
-        TextView l = text(16, false);
+        TextView l = text(20, false);
         l.setText(L.t("next2h"));
         p.addView(l);
-        soonView = text(18, true);
+        soonView = text(21, true);
         p.addView(soonView);
         p.addView(rule());
         // Les 12 prochaines heures, défilement horizontal continu.
@@ -417,7 +418,12 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
         lp.topMargin = dp(2);
         p.addView(hscroll, lp);
-        return p;
+        ScrollView sv = new ScrollView(this);
+        sv.setFillViewport(true);
+        sv.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        sv.setVerticalScrollBarEnabled(false);
+        sv.addView(p, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return sv;
     }
 
     private LinearLayout labelled(String label, TextView value) {
@@ -466,6 +472,7 @@ public class MainActivity extends Activity {
         weatherView.setVisibility(grid ? View.VISIBLE : View.GONE);
         ephView.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
         summaryView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
+        if (tab == TAB_SUMMARY) summaryView.scrollTo(0, 0);
         strip.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
 
         ZoneId zone = zone();
@@ -725,16 +732,90 @@ public class MainActivity extends Activity {
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         input.setTextColor(Ui.INK);
         LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(20), dp(8), dp(20), 0);
         box.addView(input, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(box);
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(L.t("place"))
-                .setView(box)
+                .setView(scroll)
                 .setPositiveButton(L.t("search"), (dlg, w) -> searchPlace(input.getText().toString().trim()))
                 .setNeutralButton(L.t("gps"), (dlg, w) -> useGps())
                 .setNegativeButton(L.t("cancel"), null)
-                .show();
+                .create();
+        fillFavorites(box, dialog);
+        dialog.show();
+    }
+
+    // ---------------------------------------------------------------- favoris
+
+    /** Lieux favoris enregistrés : [{"n": nom, "la": latitude, "lo": longitude}, …]. */
+    private JSONArray favorites() {
+        try {
+            return new JSONArray(prefs.getString("favorites", "[]"));
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
+    private int favoriteIndex(JSONArray favs, double la, double lo) {
+        for (int i = 0; i < favs.length(); i++) {
+            JSONObject f = favs.optJSONObject(i);
+            if (f != null && Math.abs(f.optDouble("la") - la) < 0.005 && Math.abs(f.optDouble("lo") - lo) < 0.005) return i;
+        }
+        return -1;
+    }
+
+    /** Sous la saisie : ajouter / retirer le lieu actuel des favoris, puis la liste des favoris (un appui pour choisir). */
+    private void fillFavorites(LinearLayout box, AlertDialog dialog) {
+        while (box.getChildCount() > 1) box.removeViewAt(1);
+        JSONArray favs = favorites();
+        String name = prefs.getString("name", DEF_NAME);
+        double la = lat(), lo = lon();
+        int cur = favoriteIndex(favs, la, lo);
+
+        TextView toggle = text(17, false);
+        toggle.setText(cur >= 0 ? "★  " + L.f("fav_remove", name) : "☆  " + L.f("fav_add", name));
+        if (Ui.COLOR) toggle.setTextColor(Ui.ACCENT);
+        toggle.setPadding(0, dp(12), 0, dp(12));
+        toggle.setOnClickListener(v -> {
+            JSONArray f = favorites();
+            int i = favoriteIndex(f, la, lo);
+            if (i >= 0) f.remove(i);
+            else {
+                try {
+                    f.put(new JSONObject().put("n", name).put("la", la).put("lo", lo));
+                } catch (Exception ignored) {
+                }
+            }
+            prefs.edit().putString("favorites", f.toString()).apply();
+            fillFavorites(box, dialog);
+        });
+        box.addView(toggle);
+
+        if (favs.length() == 0) return;
+        box.addView(rule());
+        TextView title = text(14, true);
+        title.setTextColor(Ui.MUTED);
+        title.setText(L.t("favorites"));
+        title.setPadding(0, dp(8), 0, dp(2));
+        box.addView(title);
+        for (int i = 0; i < favs.length(); i++) {
+            JSONObject f = favs.optJSONObject(i);
+            if (f == null) continue;
+            String n = f.optString("n");
+            double fla = f.optDouble("la"), flo = f.optDouble("lo");
+            TextView row = text(20, i == cur);
+            row.setText(n);
+            row.setPadding(0, dp(10), 0, dp(10));
+            row.setOnClickListener(v -> {
+                dialog.dismiss();
+                setPlace(n, fla, flo);
+            });
+            box.addView(row);
+        }
     }
 
     private void searchPlace(String q) {
