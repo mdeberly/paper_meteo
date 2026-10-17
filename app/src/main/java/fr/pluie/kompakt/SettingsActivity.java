@@ -175,7 +175,7 @@ public class SettingsActivity extends Activity {
 
     private void showAbout() {
         TextView body = text(17, false);
-        body.setText(L.f("version", versionName()) + "\n\n" + L.t("about_text") + "\n\nwww.deberly.fr"
+        body.setText(L.t("about_text") + "\n\nwww.deberly.fr\n\n" + L.f("version", versionName())
                 + "\n\n" + L.t("credits"));
         body.setPadding(dp(24), dp(12), dp(24), 0);
         body.setLinkTextColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);

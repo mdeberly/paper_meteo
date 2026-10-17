@@ -58,7 +58,7 @@ public class DayView extends View {
 
     /** Hauteur d'une ligne, en pixels. */
     public int rowHeight() {
-        return px(header ? 32 : 60);
+        return px(header ? 54 : 60);
     }
 
     private int px(float dp) {
@@ -83,17 +83,26 @@ public class DayView extends View {
         float pad = px(4);
 
         if (header) {
-            text.setColor(Ui.MUTED);
+            // Petite icône au-dessus de chaque colonne, puis le titre en gras et l'unité.
+            float h = getHeight();
+            float ic = h * 0.3f, iy = h * 0.2f, y1 = h * 0.6f, y2 = h * 0.88f;
+            bold.setTextSize(sp(14));
             text.setTextSize(sp(12));
+            text.setColor(Ui.MUTED);
+            bold.setColor(Ui.INK);
+            bold.setTextAlign(Paint.Align.RIGHT);
             text.setTextAlign(Paint.Align.RIGHT);
-            float y1 = getHeight() * 0.45f, y2 = getHeight() * 0.85f;
-            title(c, L.t("col_sun"), "min", w * SUN, y1, y2);
-            title(c, L.t("col_rain"), "mm", w * RAIN, y1, y2);
-            title(c, L.t("col_temp"), Fmt.unit(), w * TEMP, y1, y2);
+            title(c, SUN_ICON, L.t("col_sun"), "min", w * SUN, iy, ic, y1, y2);
+            title(c, DROP_ICON, L.t("col_rain"), "mm", w * RAIN, iy, ic, y1, y2);
+            title(c, THERMO_ICON, L.t("col_temp"), Fmt.unit(), w * TEMP, iy, ic, y1, y2);
+            bold.setTextAlign(Paint.Align.CENTER);
             text.setTextAlign(Paint.Align.CENTER);
-            title(c, L.t("col_wind"), "km/h", w * WIND, y1, y2);
-            text.setTextAlign(Paint.Align.LEFT);
-            c.drawText(L.t("col_hour"), pad, y2, text);
+            title(c, WIND_ICON, L.t("col_wind"), "km/h", w * WIND, iy, ic, y1, y2);
+            bold.setTextAlign(Paint.Align.LEFT);
+            String hourName = L.t("col_hour");
+            columnIcon(c, CLOCK_ICON, pad + bold.measureText(hourName) / 2f, iy, ic);
+            c.drawText(hourName, pad, y1, bold);
+            bold.setTextSize(sp(22));
             ink.setColor(Ui.LINE);
             c.drawRect(0, getHeight() - px(Ui.LINE_DP), w, getHeight(), ink);
             return;
@@ -165,9 +174,83 @@ public class DayView extends View {
         }
     }
 
-    private void title(Canvas c, String name, String unit, float right, float y1, float y2) {
-        c.drawText(name, right, y1, text);
-        c.drawText(unit, right, y2, text);
+    private static final int CLOCK_ICON = 0, SUN_ICON = 1, DROP_ICON = 2, THERMO_ICON = 3, WIND_ICON = 4;
+
+    /** Titre de colonne : icône centrée au-dessus du nom (en gras), unité en dessous. Alignement selon les pinceaux. */
+    private void title(Canvas c, int icon, String name, String unit, float x, float iy, float ic, float y1, float y2) {
+        float nw = bold.measureText(name);
+        float cx = bold.getTextAlign() == Paint.Align.RIGHT ? x - nw / 2f : x;
+        columnIcon(c, icon, cx, iy, ic);
+        c.drawText(name, x, y1, bold);
+        c.drawText(unit, x, y2, text);
+    }
+
+    /** Icônes des titres : horloge, soleil, goutte, thermomètre, vent, dans un carré de côté s centré en (cx, cy). */
+    private void columnIcon(Canvas c, int icon, float cx, float cy, float s) {
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setStrokeCap(Paint.Cap.ROUND);
+        p.setStrokeJoin(Paint.Join.ROUND);
+        float r = s / 2f, sw = Math.max(1.5f, s * 0.1f);
+        p.setStrokeWidth(sw);
+        switch (icon) {
+            case CLOCK_ICON:
+                p.setColor(Ui.INK);
+                p.setStyle(Paint.Style.STROKE);
+                c.drawCircle(cx, cy, r * 0.88f, p);
+                c.drawLine(cx, cy, cx, cy - r * 0.55f, p);
+                c.drawLine(cx, cy, cx + r * 0.42f, cy + r * 0.12f, p);
+                break;
+            case SUN_ICON:
+                p.setColor(Ui.COLOR ? Ui.SUN : Ui.INK);
+                p.setStyle(Paint.Style.FILL);
+                c.drawCircle(cx, cy, r * 0.42f, p);
+                p.setStyle(Paint.Style.STROKE);
+                for (int i = 0; i < 8; i++) {
+                    double a = Math.PI / 4 * i;
+                    float dx = (float) Math.cos(a), dy = (float) Math.sin(a);
+                    c.drawLine(cx + dx * r * 0.66f, cy + dy * r * 0.66f, cx + dx * r, cy + dy * r, p);
+                }
+                break;
+            case DROP_ICON: {
+                p.setColor(Ui.COLOR ? Ui.RAIN : Ui.INK);
+                p.setStyle(Paint.Style.FILL);
+                float br = r * 0.58f, by = cy + r * 0.32f;
+                Path d = new Path();
+                d.moveTo(cx, cy - r);
+                d.lineTo(cx + br * 0.92f, by - br * 0.4f);
+                d.lineTo(cx - br * 0.92f, by - br * 0.4f);
+                d.close();
+                c.drawPath(d, p);
+                c.drawCircle(cx, by, br, p);
+                break;
+            }
+            case THERMO_ICON: {
+                p.setColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);
+                float tw = r * 0.26f, br = r * 0.36f, by = cy + r * 0.62f;
+                p.setStyle(Paint.Style.STROKE);
+                c.drawRoundRect(cx - tw, cy - r, cx + tw, by, tw, tw, p);
+                p.setStyle(Paint.Style.FILL);
+                c.drawCircle(cx, by, br, p);
+                c.drawRect(cx - tw * 0.4f, cy - r * 0.3f, cx + tw * 0.4f, by, p);
+                break;
+            }
+            default: {
+                // Vent : trois traits horizontaux, deux terminés par une boucle.
+                p.setColor(Ui.COLOR ? Ui.CLOUD : Ui.INK);
+                p.setStyle(Paint.Style.STROKE);
+                Path wp = new Path();
+                wp.moveTo(cx - r, cy - r * 0.4f);
+                wp.lineTo(cx + r * 0.45f, cy - r * 0.4f);
+                wp.arcTo(cx + r * 0.2f, cy - r * 0.9f, cx + r * 0.7f, cy - r * 0.4f, 90, -270, false);
+                wp.moveTo(cx - r, cy + r * 0.05f);
+                wp.lineTo(cx + r * 0.8f, cy + r * 0.05f);
+                wp.moveTo(cx - r * 0.7f, cy + r * 0.5f);
+                wp.lineTo(cx + r * 0.25f, cy + r * 0.5f);
+                wp.arcTo(cx, cy + r * 0.5f, cx + r * 0.5f, cy + r, -90, 270, false);
+                c.drawPath(wp, p);
+                break;
+            }
+        }
     }
 
     /** Flèche indiquant où va le vent (il vient de {@code from} degrés). */

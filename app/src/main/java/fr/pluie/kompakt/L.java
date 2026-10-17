@@ -125,8 +125,8 @@ final class L {
 
     static {
         // Onglets, boutons, écran principal.
-        put("tab_summary", "Résumé", "Summary", "Übersicht", "Resumen", "Riepilogo", "Resumo", "Podsumowanie");
-        put("tab_weather", "Météo", "Weather", "Wetter", "Tiempo", "Meteo", "Tempo", "Pogoda");
+        put("tab_summary", "Aujourd'hui", "Today", "Heute", "Hoy", "Oggi", "Hoje", "Dziś");
+        put("tab_weather", "Semaine", "Week", "Woche", "Semana", "Settimana", "Semana", "Tydzień");
         put("tab_eph", "Éphéméride", "Almanac", "Kalender", "Efemérides", "Effemeridi", "Efemérides", "Kalendarz");
         put("refresh", "Actualiser", "Refresh", "Aktualisieren", "Actualizar", "Aggiorna", "Atualizar", "Odśwież");
         put("settings", "Paramètres", "Settings", "Einstellungen", "Ajustes", "Impostazioni", "Definições", "Ustawienia");
@@ -278,13 +278,13 @@ final class L {
                 "Previsões: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Locais: © OpenStreetMap (ODbL).",
                 "Prognozy: Open-Meteo.com (CC BY 4.0). Imieniny PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Miejscowości: © OpenStreetMap (ODbL).");
         put("about_text",
-                "Application créée par l'IA Claude sur l'idée de Maximilien DEBERLY, Chauny, FRANCE.",
-                "App created by the AI Claude from an idea by Maximilien DEBERLY, Chauny, FRANCE.",
-                "App erstellt von der KI Claude nach einer Idee von Maximilien DEBERLY, Chauny, FRANKREICH.",
-                "Aplicación creada por la IA Claude a partir de una idea de Maximilien DEBERLY, Chauny, FRANCIA.",
-                "App creata dall'IA Claude da un'idea di Maximilien DEBERLY, Chauny, FRANCIA.",
-                "Aplicação criada pela IA Claude a partir de uma ideia de Maximilien DEBERLY, Chauny, FRANÇA.",
-                "Aplikacja stworzona przez AI Claude według pomysłu Maximiliena DEBERLY, Chauny, FRANCJA.");
+                "Application créée par Maximilien DEBERLY, pharmacien, avec l'aide de l'IA Claude pour le code.",
+                "App created by Maximilien DEBERLY, pharmacist, with the help of the AI Claude for the code.",
+                "App erstellt von Maximilien DEBERLY, Apotheker, mit Hilfe der KI Claude für den Code.",
+                "Aplicación creada por Maximilien DEBERLY, farmacéutico, con la ayuda de la IA Claude para el código.",
+                "App creata da Maximilien DEBERLY, farmacista, con l'aiuto dell'IA Claude per il codice.",
+                "Aplicação criada por Maximilien DEBERLY, farmacêutico, com a ajuda da IA Claude para o código.",
+                "Aplikacja stworzona przez Maximiliena DEBERLY, farmaceutę, z pomocą AI Claude przy kodzie.");
 
         // Résumé écrit.
         put("parts", "ce matin|cet après-midi|ce soir|cette nuit|toute la journée",
