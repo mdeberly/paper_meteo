@@ -95,7 +95,7 @@ public class MainActivity extends Activity {
     private ScrollView summaryView;
 
     // Radar : carte, boutons, chargement en arrière-plan et animation.
-    private static final int RADAR_MIN_ZOOM = 5, RADAR_MAX_ZOOM = 8;
+    private static final int RADAR_MIN_ZOOM = 5, RADAR_MAX_ZOOM = 9;
     private static final long RADAR_STALE_MS = 10 * 60 * 1000L;
     private final ExecutorService radarIo = Executors.newSingleThreadExecutor();
     private LinearLayout radarPage;
@@ -789,7 +789,7 @@ public class MainActivity extends Activity {
     }
 
     private int radarZoom() {
-        return Math.max(RADAR_MIN_ZOOM, Math.min(RADAR_MAX_ZOOM, prefs.getInt("radar_zoom", 7)));
+        return Math.max(RADAR_MIN_ZOOM, Math.min(RADAR_MAX_ZOOM, prefs.getInt("radar_zoom", 8)));
     }
 
     private void radarButton(int k) {

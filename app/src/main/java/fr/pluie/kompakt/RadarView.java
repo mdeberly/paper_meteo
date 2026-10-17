@@ -116,7 +116,7 @@ public class RadarView extends View {
     protected void onDraw(Canvas c) {
         float w = getWidth(), h = getHeight();
         c.drawColor(Ui.BG);
-        float headH = dp(30), footH = dp(52);
+        float headH = dp(30), footH = dp(28);
         RectF box = new RectF(0, headH, w, h - footH);
         float scale = (float) (256.0 * (1 << zoom) * w / 512.0); // pixels écran par unité Mercator
         float mx = box.centerX(), my = box.centerY();
@@ -139,6 +139,7 @@ public class RadarView extends View {
             float r = (float) (mx + (f.cx + f.half - cx) * scale), b = (float) (my + (f.cy + f.half - cy) * scale);
             c.drawBitmap(f.image, null, new RectF(l, t, r, b), image);
         }
+        if (f != null && !Ui.COLOR) drawFlakes(c, f, mx, my, scale);
         drawCities(c, box, scale);
         drawCenter(c, mx, my);
         // Mention des sources, en bas à gauche de la carte.
@@ -181,6 +182,25 @@ public class RadarView extends View {
         line.setColor(BORDER);
         line.setStrokeWidth(Ui.COLOR ? dp(1) : Math.max(1, dp(0.8f)));
         c.drawPath(p, line);
+    }
+
+    /** Noir et blanc : petits flocons sur les zones où il neige (la neige se distingue mal de la pluie en gris). */
+    private void drawFlakes(Canvas c, RadarData.Frame f, float mx, float my, float scale) {
+        float r = dp(6);
+        for (int i = 0; i + 1 < f.flakes.length; i += 2) {
+            float x = (float) (mx + (f.flakes[i] - cx) * scale), y = (float) (my + (f.flakes[i + 1] - cy) * scale);
+            fill.setStyle(Paint.Style.FILL);
+            fill.setColor(0xFFFFFFFF);
+            c.drawCircle(x, y, r * 1.35f, fill);
+            line.setColor(0xFF000000);
+            line.setStrokeWidth(dp(1.6f));
+            line.setStrokeCap(Paint.Cap.ROUND);
+            for (int k = 0; k < 3; k++) {
+                double a = Math.PI / 3 * k + Math.PI / 2;
+                float dx = (float) Math.cos(a) * r, dy = (float) Math.sin(a) * r;
+                c.drawLine(x - dx, y - dy, x + dx, y + dy, line);
+            }
+        }
     }
 
     /** Villes : les plus importantes d'abord, sans chevauchement, plus nombreuses quand on zoome. */
@@ -280,7 +300,7 @@ public class RadarView extends View {
         c.drawText(s, 0, y, text);
     }
 
-    /** Frise des images (passé rempli, prévision en creux, image affichée agrandie) et légende. */
+    /** Frise des images : passé rempli, prévision en creux, image affichée agrandie. */
     private void drawFooter(Canvas c, float w, float top, float fh) {
         int n = frames.size();
         float y = top + dp(14);
@@ -313,27 +333,6 @@ public class RadarView extends View {
                     c.drawLine(x + step / 2, y - dp(8), x + step / 2, y + dp(8), line);
                 }
             }
-        }
-        // Légende.
-        text.setTypeface(Typeface.DEFAULT);
-        text.setTextSize(sp(12));
-        text.setTextAlign(Paint.Align.LEFT);
-        String[] names = L.t("radar_levels").split("\\|");
-        float sw = dp(14), gap = dp(5), total = 0;
-        for (String s : names) total += sw + gap + text.measureText(s) + dp(12);
-        float x = Math.max(0, (w - total) / 2), ly = top + fh - dp(10);
-        for (int i = 0; i < names.length && i < 4; i++) {
-            fill.setStyle(Paint.Style.FILL);
-            fill.setColor(LAND);
-            c.drawRect(x, ly - sw * 0.8f, x + sw, ly + sw * 0.2f, fill);
-            fill.setColor(RadarData.LEVEL_COLORS[i + 1]);
-            c.drawRect(x, ly - sw * 0.8f, x + sw, ly + sw * 0.2f, fill);
-            line.setColor(Ui.MUTED);
-            line.setStrokeWidth(Math.max(1, dp(0.8f)));
-            c.drawRect(x, ly - sw * 0.8f, x + sw, ly + sw * 0.2f, line);
-            x += sw + gap;
-            c.drawText(names[i], x, ly, text);
-            x += text.measureText(names[i]) + dp(12);
         }
     }
 }
