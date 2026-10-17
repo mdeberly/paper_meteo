@@ -21,3 +21,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 Service https://nominatim.openstreetmap.org (géocodage inverse, appelé une fois par localisation GPS).
 Données © contributeurs OpenStreetMap, sous licence ODbL : https://www.openstreetmap.org/copyright
+
+## Onglet Radar
+
+- Images radar : RainViewer, API Weather Maps (https://www.rainviewer.com/api.html), gratuite pour un usage
+  personnel, mention « RainViewer » affichée sur la carte.
+- Prévision des 3 prochaines heures : Open-Meteo (CC BY 4.0), précipitations par quart d'heure sur une grille de points.
+- Fond de carte : Natural Earth (https://www.naturalearthdata.com), domaine public. Fichiers
+  `app/src/main/assets/map/borders.bin` et `cities.tsv`, produits par `tools/make_map.py`.
+- Code de l'onglet écrit pour Paper Meteo (aucun code repris de kRadar).

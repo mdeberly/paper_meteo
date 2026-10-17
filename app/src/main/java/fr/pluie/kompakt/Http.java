@@ -10,10 +10,14 @@ final class Http {
     private Http() {}
 
     static String get(String url) throws Exception {
+        return new String(bytes(url), StandardCharsets.UTF_8);
+    }
+
+    static byte[] bytes(String url) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(15000);
         c.setReadTimeout(20000);
-        c.setRequestProperty("Accept", "application/json");
+        c.setRequestProperty("Accept", "*/*");
         // Identification demandée par OpenStreetMap (Nominatim) pour la recherche du nom de la commune.
         c.setRequestProperty("User-Agent", "PaperMeteo (Android; www.deberly.fr)");
         try {
@@ -24,7 +28,7 @@ final class Http {
                 byte[] buf = new byte[8192];
                 int n;
                 while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
-                return new String(out.toByteArray(), StandardCharsets.UTF_8);
+                return out.toByteArray();
             }
         } finally {
             c.disconnect();

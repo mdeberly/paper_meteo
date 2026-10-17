@@ -139,19 +139,19 @@ public class Forecast {
             }
             if (clear < 25) continue;
             double f = day.direct.v[h] / clear;
-            // Soleil voilé : nuages hauts sur au moins 40 % du ciel et direct sous 85 % du ciel clair.
-            // Le voile laisse passer assez de direct pour compter comme « ensoleillé » au sens de l'OMM,
-            // mais on le compte en proportion du direct reçu, réduit d'un cinquième (50 % → 24 min).
+            // Soleil voilé : nuages hauts sur au moins 40 % du ciel et direct sous 85 % du ciel clair ;
+            // compté en proportion du direct reçu, réduit de 30 % (50 % → 21 min).
             boolean veiled = day.highCloud.has[h] && day.highCloud.v[h] >= 40 && f < 0.85;
-            double byDirect = veiled ? 60 * Math.min(1, f) * 0.8
-                    // Ciel sans voile : heure entière ensoleillée dès 70 % du direct par ciel clair.
-                    : 60 * Math.min(1, f / 0.7);
-            // Deuxième estimation, par la couverture nuageuse (le voile y est compté comme nuage).
-            double byCloud = day.cloud.has[h] ? 60 * (1 - day.cloud.v[h] / 100) : 0;
-            double est = Math.max(byDirect, byCloud);
-            // Valeur d'Open-Meteo comme plancher, sauf sous un voile (elle le compte en plein soleil).
-            double model = day.sun.has[h] ? day.sun.v[h] : 0;
-            if (!veiled) est = Math.max(est, model);
+            double byDirect = veiled ? 60 * Math.min(1, f) * 0.7
+                    // Ciel sans voile : heure entière ensoleillée seulement près du ciel clair (85 % du direct).
+                    : 60 * Math.min(1, f / 0.85);
+            // Deuxième estimation, par la couverture nuageuse (le voile y est compté comme nuage),
+            // atténuée : un ciel à moitié couvert cache le soleil plus de la moitié du temps.
+            double byCloud = day.cloud.has[h] ? 60 * Math.pow(1 - day.cloud.v[h] / 100, 1.3) : byDirect;
+            // Moyenne pondérée des deux (plus de poids au rayonnement direct). La durée d'ensoleillement
+            // d'Open-Meteo, trop généreuse, n'est plus utilisée.
+            double est = 0.6 * byDirect + 0.4 * byCloud;
+            if (f < 0.1) est = Math.min(est, 5); // direct presque nul : soleil à peine entrevu
             day.sun.v[h] = Math.min(daylight, est);
             day.sun.has[h] = true;
         }

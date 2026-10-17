@@ -127,6 +127,7 @@ final class L {
         // Onglets, boutons, écran principal.
         put("tab_summary", "Aujourd'hui", "Today", "Heute", "Hoy", "Oggi", "Hoje", "Dziś");
         put("tab_weather", "Semaine", "Week", "Woche", "Semana", "Settimana", "Semana", "Tydzień");
+        put("tab_radar", "Radar", "Radar", "Radar", "Radar", "Radar", "Radar", "Radar");
         put("tab_eph", "Éphéméride", "Almanac", "Kalender", "Efemérides", "Effemeridi", "Efemérides", "Kalendarz");
         put("refresh", "Actualiser", "Refresh", "Aktualisieren", "Actualizar", "Aggiorna", "Atualizar", "Odśwież");
         put("settings", "Paramètres", "Settings", "Einstellungen", "Ajustes", "Impostazioni", "Definições", "Ustawienia");
@@ -247,6 +248,29 @@ final class L {
         put("fav_remove", "Retirer « {0} » des favoris", "Remove “{0}” from favourites", "„{0}“ aus Favoriten entfernen",
                 "Quitar «{0}» de favoritos", "Rimuovi «{0}» dai preferiti", "Remover «{0}» dos favoritos",
                 "Usuń „{0}” z ulubionych");
+        // Onglet Radar.
+        put("radar_last", "dernière image radar", "latest radar image", "letztes Radarbild", "última imagen de radar",
+                "ultima immagine radar", "última imagem de radar", "ostatni obraz radaru");
+        put("radar_ago", "il y a {0}", "{0} ago", "vor {0}", "hace {0}", "{0} fa", "há {0}", "{0} temu");
+        put("radar_in", "prévision dans {0}", "forecast in {0}", "Vorhersage in {0}", "previsión en {0}",
+                "previsione tra {0}", "previsão daqui a {0}", "prognoza za {0}");
+        put("radar_fc_src", "prévision", "forecast", "Vorhersage", "previsión", "previsione", "previsão", "prognoza");
+        put("radar_levels", "faible|modérée|forte|très forte", "light|moderate|heavy|very heavy",
+                "leicht|mäßig|stark|sehr stark", "débil|moderada|fuerte|muy fuerte", "debole|moderata|forte|molto forte",
+                "fraca|moderada|forte|muito forte", "słaby|umiarkowany|silny|bardzo silny");
+        put("radar_loading", "Chargement du radar…", "Loading radar…", "Radar wird geladen…", "Cargando radar…",
+                "Caricamento radar…", "A carregar o radar…", "Ładowanie radaru…");
+        put("radar_failed", "Radar indisponible (réseau ?)", "Radar unavailable (network?)", "Radar nicht verfügbar (Netz?)",
+                "Radar no disponible (¿red?)", "Radar non disponibile (rete?)", "Radar indisponível (rede?)",
+                "Radar niedostępny (sieć?)");
+        put("radar_no_radar", "radar indisponible", "radar unavailable", "Radar nicht verfügbar", "radar no disponible",
+                "radar non disponibile", "radar indisponível", "radar niedostępny");
+        put("radar_no_fc", "prévision indisponible", "forecast unavailable", "Vorhersage nicht verfügbar",
+                "previsión no disponible", "previsione non disponibile", "previsão indisponível", "prognoza niedostępna");
+        put("radar_status", "Radar : RainViewer (2 h) · prévision : Open-Meteo (3 h)",
+                "Radar: RainViewer (2 h) · forecast: Open-Meteo (3 h)", "Radar: RainViewer (2 h) · Vorhersage: Open-Meteo (3 h)",
+                "Radar: RainViewer (2 h) · previsión: Open-Meteo (3 h)", "Radar: RainViewer (2 h) · previsione: Open-Meteo (3 h)",
+                "Radar: RainViewer (2 h) · previsão: Open-Meteo (3 h)", "Radar: RainViewer (2 h) · prognoza: Open-Meteo (3 h)");
         put("search_failed", "Recherche impossible (réseau ?)", "Search failed (network?)", "Suche fehlgeschlagen (Netz?)",
                 "Búsqueda imposible (¿red?)", "Ricerca non riuscita (rete?)", "Pesquisa impossível (rede?)",
                 "Wyszukiwanie nieudane (sieć?)");
@@ -270,13 +294,13 @@ final class L {
         put("about", "À propos", "About", "Über die App", "Acerca de", "Informazioni", "Sobre", "O aplikacji");
         put("version", "Version {0}", "Version {0}", "Version {0}", "Versión {0}", "Versione {0}", "Versão {0}", "Wersja {0}");
         put("credits",
-                "Prévisions : Open-Meteo.com (CC BY 4.0). Fêtes PL, DE, CZ, SE, NO, DK : namedays © Filip Tammergård (MIT). Communes : © OpenStreetMap (ODbL).",
-                "Forecasts: Open-Meteo.com (CC BY 4.0). Name days PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Places: © OpenStreetMap (ODbL).",
-                "Vorhersagen: Open-Meteo.com (CC BY 4.0). Namenstage PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Orte: © OpenStreetMap (ODbL).",
-                "Previsiones: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Lugares: © OpenStreetMap (ODbL).",
-                "Previsioni: Open-Meteo.com (CC BY 4.0). Onomastici PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Località: © OpenStreetMap (ODbL).",
-                "Previsões: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Locais: © OpenStreetMap (ODbL).",
-                "Prognozy: Open-Meteo.com (CC BY 4.0). Imieniny PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Miejscowości: © OpenStreetMap (ODbL).");
+                "Prévisions : Open-Meteo.com (CC BY 4.0). Fêtes PL, DE, CZ, SE, NO, DK : namedays © Filip Tammergård (MIT). Communes : © OpenStreetMap (ODbL). Radar : RainViewer. Fond de carte : Natural Earth.",
+                "Forecasts: Open-Meteo.com (CC BY 4.0). Name days PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Places: © OpenStreetMap (ODbL). Radar: RainViewer. Base map: Natural Earth.",
+                "Vorhersagen: Open-Meteo.com (CC BY 4.0). Namenstage PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Orte: © OpenStreetMap (ODbL). Radar: RainViewer. Karte: Natural Earth.",
+                "Previsiones: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Lugares: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth.",
+                "Previsioni: Open-Meteo.com (CC BY 4.0). Onomastici PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Località: © OpenStreetMap (ODbL). Radar: RainViewer. Mappa: Natural Earth.",
+                "Previsões: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Locais: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth.",
+                "Prognozy: Open-Meteo.com (CC BY 4.0). Imieniny PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Miejscowości: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth.");
         put("about_text",
                 "Application créée par Maximilien DEBERLY, pharmacien, avec l'aide de l'IA Claude pour le code.",
                 "App created by Maximilien DEBERLY, pharmacist, with the help of the AI Claude for the code.",

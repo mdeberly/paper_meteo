@@ -57,8 +57,8 @@ public class MainActivity extends Activity {
     private static final long STALE_MS = 30 * 60 * 1000L;
     private static final int REQ_LOC = 1;
 
-    private static final int TAB_SUMMARY = 0, TAB_WEATHER = 1, TAB_EPH = 2;
-    private static final String[] TAB_KEYS = {"tab_summary", "tab_weather", "tab_eph"};
+    private static final int TAB_SUMMARY = 0, TAB_WEATHER = 1, TAB_EPH = 2, TAB_RADAR = 3;
+    private static final String[] TAB_KEYS = {"tab_summary", "tab_weather", "tab_eph", "tab_radar"};
 
     private SharedPreferences prefs;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -93,6 +93,28 @@ public class MainActivity extends Activity {
     private MoonView moonView;
 
     private ScrollView summaryView;
+
+    // Radar : carte, boutons, chargement en arrière-plan et animation.
+    private static final int RADAR_MIN_ZOOM = 5, RADAR_MAX_ZOOM = 8;
+    private static final long RADAR_STALE_MS = 10 * 60 * 1000L;
+    private final ExecutorService radarIo = Executors.newSingleThreadExecutor();
+    private LinearLayout radarPage;
+    private RadarView radarView;
+    private TextView playButton;
+    private String radarKey = "";
+    private long radarTime;
+    private int radarGen;
+    private boolean playing;
+    private final Runnable player = new Runnable() {
+        @Override public void run() {
+            if (!playing || radarView.count() == 0) return;
+            int next = radarView.index() + 1;
+            boolean wrap = next >= radarView.count();
+            radarView.show(wrap ? 0 : next);
+            // Petite pause sur la dernière image avant de reprendre au début.
+            ui.postDelayed(this, next == radarView.count() - 1 ? 1600 : 800);
+        }
+    };
     private TextView summaryText, soonView;
     private CurrentView currentView;
     private NextHoursView nextHoursView;
@@ -164,9 +186,16 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        stopPlay();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         io.shutdownNow();
+        radarIo.shutdownNow();
     }
 
     // ---------------------------------------------------------------- interface
@@ -262,6 +291,13 @@ public class MainActivity extends Activity {
             // Largeur selon le texte, la place restante partagée à parts égales.
             tabs.addView(t, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         }
+        // Texte des onglets réduit si les quatre ne tiennent pas sur la largeur.
+        float needed = 0;
+        for (TextView t : tabViews) needed += t.getPaint().measureText(t.getText().toString()) + dp(10);
+        float room = getResources().getDisplayMetrics().widthPixels - dp(16) - dp(4);
+        if (needed > room) {
+            for (TextView t : tabViews) t.setTextSize(TypedValue.COMPLEX_UNIT_PX, t.getTextSize() * room / needed);
+        }
         LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(40));
         tlp.topMargin = dp(6);
         root.addView(tabs, tlp);
@@ -331,6 +367,9 @@ public class MainActivity extends Activity {
 
         summaryView = buildSummary();
         root.addView(summaryView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+
+        radarPage = buildRadar();
+        root.addView(radarPage, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         statusView = text(12, false);
         statusView.setPadding(0, dp(4), 0, 0);
@@ -474,6 +513,13 @@ public class MainActivity extends Activity {
         summaryView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
         if (tab == TAB_SUMMARY) summaryView.scrollTo(0, 0);
         strip.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
+        radarPage.setVisibility(tab == TAB_RADAR ? View.VISIBLE : View.GONE);
+        if (tab != TAB_RADAR) stopPlay();
+        if (tab == TAB_RADAR) {
+            titleView.setVisibility(View.GONE);
+            renderRadar();
+            return;
+        }
 
         ZoneId zone = zone();
         LocalDate today = LocalDate.now(zone);
@@ -678,6 +724,7 @@ public class MainActivity extends Activity {
     private double lon() { return Double.parseDouble(prefs.getString("lon", Double.toString(DEF_LON))); }
 
     private void refresh() {
+        if (tab == TAB_RADAR) radarTime = 0; // « Actualiser » recharge aussi le radar
         if (loading) return;
         loading = true;
         statusView.setText(L.t("updating"));
@@ -708,6 +755,112 @@ public class MainActivity extends Activity {
                     statusView.setText(L.t("update_failed"));
                 });
             }
+        });
+    }
+
+    // ---------------------------------------------------------------- radar
+
+    private LinearLayout buildRadar() {
+        LinearLayout p = new LinearLayout(this);
+        p.setOrientation(LinearLayout.VERTICAL);
+        radarView = new RadarView(this);
+        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
+        mlp.topMargin = dp(4);
+        p.addView(radarView, mlp);
+        // Boutons : zoom −, image précédente, lecture / pause, image suivante, zoom +.
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        String[] labels = {"−", "◀", "▶", "▶▶", "+"};
+        for (int i = 0; i < labels.length; i++) {
+            TextView b = button(labels[i]);
+            b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+            b.setPadding(0, dp(4), 0, dp(4));
+            LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(0, dp(44), 1);
+            if (i > 0) blp.leftMargin = dp(6);
+            bar.addView(b, blp);
+            final int k = i;
+            b.setOnClickListener(v -> radarButton(k));
+            if (i == 2) playButton = b;
+        }
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        blp.topMargin = dp(6);
+        p.addView(bar, blp);
+        return p;
+    }
+
+    private int radarZoom() {
+        return Math.max(RADAR_MIN_ZOOM, Math.min(RADAR_MAX_ZOOM, prefs.getInt("radar_zoom", 7)));
+    }
+
+    private void radarButton(int k) {
+        switch (k) {
+            case 0:
+            case 4: {
+                int z = radarZoom() + (k == 0 ? -1 : 1);
+                if (z < RADAR_MIN_ZOOM || z > RADAR_MAX_ZOOM) return;
+                prefs.edit().putInt("radar_zoom", z).apply();
+                renderRadar();
+                break;
+            }
+            case 1:
+                stopPlay();
+                radarView.show(radarView.index() - 1);
+                break;
+            case 3:
+                stopPlay();
+                radarView.show(radarView.index() + 1);
+                break;
+            default:
+                if (playing) stopPlay();
+                else if (radarView.count() > 1) {
+                    playing = true;
+                    playButton.setText("❚❚");
+                    ui.postDelayed(player, 300);
+                }
+        }
+    }
+
+    private void stopPlay() {
+        playing = false;
+        ui.removeCallbacks(player);
+        if (playButton != null) playButton.setText("▶");
+    }
+
+    private void renderRadar() {
+        String name = prefs.getString("name", DEF_NAME);
+        int z = radarZoom();
+        radarView.setZone(zone());
+        radarView.setPlace(lat(), lon(), name, z);
+        statusView.setText(L.t("radar_status"));
+        String key = lat() + "/" + lon() + "/" + Math.min(z, RadarData.MAX_RADAR_ZOOM) + "/" + z;
+        if (!key.equals(radarKey) || System.currentTimeMillis() - radarTime > RADAR_STALE_MS) loadRadar(key);
+    }
+
+    private void loadRadar(String key) {
+        radarKey = key;
+        radarTime = System.currentTimeMillis();
+        final int gen = ++radarGen;
+        final double la = lat(), lo = lon();
+        final int z = radarZoom();
+        radarView.setMessage(L.t("radar_loading"));
+        radarIo.execute(() -> {
+            MapData m = null;
+            try {
+                m = MapData.get(this);
+            } catch (Exception ignored) {
+            }
+            final MapData map = m;
+            if (map != null) ui.post(() -> radarView.setMap(map));
+            RadarData.Result r = RadarData.load(la, lo, z);
+            ui.post(() -> {
+                if (gen != radarGen) return;
+                String msg = r.radarFailed && r.forecastFailed ? L.t("radar_failed")
+                        : r.radarFailed ? L.t("radar_no_radar") : r.forecastFailed ? L.t("radar_no_fc") : "";
+                if (r.radarFailed && r.forecastFailed) radarTime = 0; // réessayer à la prochaine ouverture
+                stopPlay();
+                radarView.setFrames(r.frames);
+                radarView.setMessage(msg);
+            });
         });
     }
 
