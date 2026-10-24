@@ -298,6 +298,8 @@ final class Weather {
             i = j;
         }
         if (out.isEmpty()) out.add(L.t("no_forecast"));
+        String totals = dayTotals(f, d);
+        if (totals != null) out.add(totals);
         return out;
     }
 
@@ -328,10 +330,43 @@ final class Weather {
             long lo = Fmt.temp(min), hi = Fmt.temp(max);
             s.append(lo == hi ? L.f("temp_around", Fmt.degUnit(min)) : L.f("temp_range", lo, Fmt.degUnit(max)));
         }
-        double wind = 0;
-        for (Hour x : hs) if (x.wind > wind) wind = x.wind;
-        if (wind >= 40) s.append(L.f("strong_wind", Math.round(wind)));
+        s.append(wind(hs));
         return s.append('.').toString();
+    }
+
+    /** « , vent de sud-ouest de 10 à 25 km/h », « , vent faible », « , vent fort d'ouest jusqu'à 55 km/h ». */
+    private static String wind(List<Hour> hs) {
+        double min = Double.MAX_VALUE, max = 0, vx = 0, vy = 0;
+        for (Hour x : hs) {
+            if (Double.isNaN(x.wind)) continue;
+            min = Math.min(min, x.wind);
+            max = Math.max(max, x.wind);
+            if (!Double.isNaN(x.windDir)) {
+                // Direction dominante : moyenne des directions pondérée par la vitesse.
+                vx += x.wind * Math.sin(Math.toRadians(x.windDir));
+                vy += x.wind * Math.cos(Math.toRadians(x.windDir));
+            }
+        }
+        if (min > max) return "";
+        if (max < 10) return L.t("wind_light");
+        if (vx == 0 && vy == 0) return "";
+        double dir = Math.toDegrees(Math.atan2(vx, vy));
+        String d = L.item("wind_dirs", (int) Math.round(((dir % 360) + 360) % 360 / 45.0) % 8);
+        if (max >= 40) return L.f("wind_strong", d, Math.round(max));
+        long lo = Math.round(min / 5) * 5, hi = Math.round(max / 5) * 5;
+        lo = Math.max(lo, 5);
+        return lo >= hi ? L.f("wind_about", d, hi) : L.f("wind_range", d, lo, hi);
+    }
+
+    /** Dernière ligne du résumé : pluie de 8 h à 20 h et soleil sur la journée, ou null sans données. */
+    static String dayTotals(Forecast f, LocalDate d) {
+        Day day = f.day(d);
+        if (day == null || !day.rain.hasAny()) return null;
+        double rain = 0;
+        for (int h = 8; h < 20; h++) if (day.rain.has[h]) rain += day.rain.v[h];
+        String mm = Fmt.total(rain) + "\u00a0mm";
+        String sun = day.sun.hasAny() ? Fmt.duration(day.sun.total()) : L.t("nd");
+        return L.f("day_totals", mm, sun);
     }
 
     /** " vers 15 h" ou " entre 14 h et 16 h" pour les heures first..last de hs. */

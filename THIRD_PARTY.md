@@ -24,9 +24,8 @@ Données © contributeurs OpenStreetMap, sous licence ODbL : https://www.openstr
 
 ## Onglet Radar
 
-- Images radar : RainViewer, API Weather Maps (https://www.rainviewer.com/api.html), gratuite pour un usage
-  personnel, mention « RainViewer » affichée sur la carte.
-- Prévision des 3 prochaines heures : Open-Meteo (CC BY 4.0), précipitations par quart d'heure sur une grille de points.
+- Images radar (passé et, si disponible, prévision immédiate) : RainViewer, API Weather Maps
+  (https://www.rainviewer.com/api.html), gratuite pour un usage personnel, mention « RainViewer » affichée sur la carte.
 - Fond de carte : Natural Earth (https://www.naturalearthdata.com), domaine public. Fichiers
   `app/src/main/assets/map/borders.bin` et `cities.tsv`, produits par `tools/make_map.py`.
 - Code de l'onglet écrit pour Paper Meteo (aucun code repris de kRadar).

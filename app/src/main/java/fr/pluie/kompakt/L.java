@@ -254,23 +254,13 @@ final class L {
         put("radar_ago", "il y a {0}", "{0} ago", "vor {0}", "hace {0}", "{0} fa", "há {0}", "{0} temu");
         put("radar_in", "prévision dans {0}", "forecast in {0}", "Vorhersage in {0}", "previsión en {0}",
                 "previsione tra {0}", "previsão daqui a {0}", "prognoza za {0}");
-        put("radar_fc_src", "prévision", "forecast", "Vorhersage", "previsión", "previsione", "previsão", "prognoza");
-        put("radar_levels", "faible|modérée|forte|très forte", "light|moderate|heavy|very heavy",
-                "leicht|mäßig|stark|sehr stark", "débil|moderada|fuerte|muy fuerte", "debole|moderata|forte|molto forte",
-                "fraca|moderada|forte|muito forte", "słaby|umiarkowany|silny|bardzo silny");
         put("radar_loading", "Chargement du radar…", "Loading radar…", "Radar wird geladen…", "Cargando radar…",
                 "Caricamento radar…", "A carregar o radar…", "Ładowanie radaru…");
         put("radar_failed", "Radar indisponible (réseau ?)", "Radar unavailable (network?)", "Radar nicht verfügbar (Netz?)",
                 "Radar no disponible (¿red?)", "Radar non disponibile (rete?)", "Radar indisponível (rede?)",
                 "Radar niedostępny (sieć?)");
-        put("radar_no_radar", "radar indisponible", "radar unavailable", "Radar nicht verfügbar", "radar no disponible",
-                "radar non disponibile", "radar indisponível", "radar niedostępny");
-        put("radar_no_fc", "prévision indisponible", "forecast unavailable", "Vorhersage nicht verfügbar",
-                "previsión no disponible", "previsione non disponibile", "previsão indisponível", "prognoza niedostępna");
-        put("radar_status", "Radar : RainViewer (2 h) · prévision : Open-Meteo (3 h)",
-                "Radar: RainViewer (2 h) · forecast: Open-Meteo (3 h)", "Radar: RainViewer (2 h) · Vorhersage: Open-Meteo (3 h)",
-                "Radar: RainViewer (2 h) · previsión: Open-Meteo (3 h)", "Radar: RainViewer (2 h) · previsione: Open-Meteo (3 h)",
-                "Radar: RainViewer (2 h) · previsão: Open-Meteo (3 h)", "Radar: RainViewer (2 h) · prognoza: Open-Meteo (3 h)");
+        put("radar_status", "Radar : RainViewer", "Radar: RainViewer", "Radar: RainViewer", "Radar: RainViewer",
+                "Radar: RainViewer", "Radar: RainViewer", "Radar: RainViewer");
         put("search_failed", "Recherche impossible (réseau ?)", "Search failed (network?)", "Suche fehlgeschlagen (Netz?)",
                 "Búsqueda imposible (¿red?)", "Ricerca non riuscita (rete?)", "Pesquisa impossível (rede?)",
                 "Wyszukiwanie nieudane (sieć?)");
@@ -369,6 +359,32 @@ final class L {
         put("strong_wind", ", vent fort jusqu'à {0} km/h", ", strong wind up to {0} km/h", ", starker Wind bis {0} km/h",
                 ", viento fuerte hasta {0} km/h", ", vento forte fino a {0} km/h", ", vento forte até {0} km/h",
                 ", silny wiatr do {0} km/h");
+        // Vent dans le résumé : {0} = direction (liste wind_dirs), {1} et {2} = vitesses en km/h.
+        put("wind_dirs", "de nord|de nord-est|d'est|de sud-est|de sud|de sud-ouest|d'ouest|de nord-ouest",
+                "northerly|north-easterly|easterly|south-easterly|southerly|south-westerly|westerly|north-westerly",
+                "Nord|Nordost|Ost|Südost|Süd|Südwest|West|Nordwest",
+                "norte|noreste|este|sureste|sur|suroeste|oeste|noroeste",
+                "nord|nord-est|est|sud-est|sud|sud-ovest|ovest|nord-ovest",
+                "norte|nordeste|leste|sudeste|sul|sudoeste|oeste|noroeste",
+                "północny|północno-wschodni|wschodni|południowo-wschodni|południowy|południowo-zachodni|zachodni|północno-zachodni");
+        put("wind_range", ", vent {0} de {1} à {2} km/h", ", {0} wind {1}–{2} km/h", ", Wind aus {0} {1} bis {2} km/h",
+                ", viento del {0} de {1} a {2} km/h", ", vento da {0} da {1} a {2} km/h", ", vento de {0} de {1} a {2} km/h",
+                ", wiatr {0} {1}–{2} km/h");
+        put("wind_about", ", vent {0} autour de {1} km/h", ", {0} wind around {1} km/h", ", Wind aus {0} um {1} km/h",
+                ", viento del {0} de unos {1} km/h", ", vento da {0} intorno a {1} km/h", ", vento de {0} de cerca de {1} km/h",
+                ", wiatr {0} około {1} km/h");
+        put("wind_strong", ", vent fort {0} jusqu'à {1} km/h", ", strong {0} wind up to {1} km/h",
+                ", starker Wind aus {0} bis {1} km/h", ", viento fuerte del {0} hasta {1} km/h",
+                ", vento forte da {0} fino a {1} km/h", ", vento forte de {0} até {1} km/h", ", silny wiatr {0} do {1} km/h");
+        put("wind_light", ", vent faible", ", light wind", ", schwacher Wind", ", viento flojo", ", vento debole",
+                ", vento fraco", ", słaby wiatr");
+        put("day_totals", "Sur la journée : {0} de pluie entre 8 h et 20 h, {1} de soleil.",
+                "For the day: {0} of rain between 8 am and 8 pm, {1} of sunshine.",
+                "Über den Tag: {0} Regen zwischen 8 und 20 Uhr, {1} Sonne.",
+                "En el día: {0} de lluvia entre las 8 y las 20 h, {1} de sol.",
+                "Nella giornata: {0} di pioggia tra le 8 e le 20, {1} di sole.",
+                "No dia: {0} de chuva entre as 8 e as 20 h, {1} de sol.",
+                "W ciągu dnia: {0} deszczu między 8 a 20, {1} słońca.");
         put("no_forecast", "Pas de prévision disponible pour les heures à venir.", "No forecast available for the coming hours.",
                 "Keine Vorhersage für die nächsten Stunden.", "No hay previsión para las próximas horas.",
                 "Nessuna previsione per le prossime ore.", "Sem previsão para as próximas horas.",

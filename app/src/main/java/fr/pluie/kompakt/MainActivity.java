@@ -854,9 +854,8 @@ public class MainActivity extends Activity {
             RadarData.Result r = RadarData.load(la, lo, z);
             ui.post(() -> {
                 if (gen != radarGen) return;
-                String msg = r.radarFailed && r.forecastFailed ? L.t("radar_failed")
-                        : r.radarFailed ? L.t("radar_no_radar") : r.forecastFailed ? L.t("radar_no_fc") : "";
-                if (r.radarFailed && r.forecastFailed) radarTime = 0; // réessayer à la prochaine ouverture
+                String msg = r.failed ? L.t("radar_failed") : "";
+                if (r.failed) radarTime = 0; // réessayer à la prochaine ouverture
                 stopPlay();
                 radarView.setFrames(r.frames);
                 radarView.setMessage(msg);

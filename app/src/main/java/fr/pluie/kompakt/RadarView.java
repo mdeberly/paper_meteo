@@ -139,14 +139,13 @@ public class RadarView extends View {
             float r = (float) (mx + (f.cx + f.half - cx) * scale), b = (float) (my + (f.cy + f.half - cy) * scale);
             c.drawBitmap(f.image, null, new RectF(l, t, r, b), image);
         }
-        if (f != null && !Ui.COLOR) drawFlakes(c, f, mx, my, scale);
         drawCities(c, box, scale);
         drawCenter(c, mx, my);
         // Mention des sources, en bas à gauche de la carte.
         text.setTypeface(Typeface.DEFAULT);
         text.setTextSize(sp(10));
         text.setTextAlign(Paint.Align.LEFT);
-        String credit = "Radar RainViewer · " + L.t("radar_fc_src") + " Open-Meteo · Natural Earth";
+        String credit = "Radar RainViewer · Natural Earth";
         outlined(c, credit, dp(4), box.bottom - dp(4), dp(2.5f));
         c.restore();
 
@@ -182,25 +181,6 @@ public class RadarView extends View {
         line.setColor(BORDER);
         line.setStrokeWidth(Ui.COLOR ? dp(1) : Math.max(1, dp(0.8f)));
         c.drawPath(p, line);
-    }
-
-    /** Noir et blanc : petits flocons sur les zones où il neige (la neige se distingue mal de la pluie en gris). */
-    private void drawFlakes(Canvas c, RadarData.Frame f, float mx, float my, float scale) {
-        float r = dp(6);
-        for (int i = 0; i + 1 < f.flakes.length; i += 2) {
-            float x = (float) (mx + (f.flakes[i] - cx) * scale), y = (float) (my + (f.flakes[i + 1] - cy) * scale);
-            fill.setStyle(Paint.Style.FILL);
-            fill.setColor(0xFFFFFFFF);
-            c.drawCircle(x, y, r * 1.35f, fill);
-            line.setColor(0xFF000000);
-            line.setStrokeWidth(dp(1.6f));
-            line.setStrokeCap(Paint.Cap.ROUND);
-            for (int k = 0; k < 3; k++) {
-                double a = Math.PI / 3 * k + Math.PI / 2;
-                float dx = (float) Math.cos(a) * r, dy = (float) Math.sin(a) * r;
-                c.drawLine(x - dx, y - dy, x + dx, y + dy, line);
-            }
-        }
     }
 
     /** Villes : les plus importantes d'abord, sans chevauchement, plus nombreuses quand on zoome. */
