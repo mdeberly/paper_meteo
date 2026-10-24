@@ -358,15 +358,19 @@ final class Weather {
         return lo >= hi ? L.f("wind_about", d, hi) : L.f("wind_range", d, lo, hi);
     }
 
-    /** Dernière ligne du résumé : pluie de 8 h à 20 h et soleil sur la journée, ou null sans données. */
+    /** Dernière ligne du résumé : pluie et soleil de 8 h à 22 h ce jour-là, ou null sans données. */
     static String dayTotals(Forecast f, LocalDate d) {
         Day day = f.day(d);
         if (day == null || !day.rain.hasAny()) return null;
-        double rain = 0;
-        for (int h = 8; h < 20; h++) if (day.rain.has[h]) rain += day.rain.v[h];
+        double rain = 0, sun = 0;
+        for (int h = 8; h < 22; h++) {
+            if (day.rain.has[h]) rain += day.rain.v[h];
+            if (day.sun.has[h]) sun += day.sun.v[h];
+        }
+        String weekday = d.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, L.locale());
         String mm = Fmt.total(rain) + "\u00a0mm";
-        String sun = day.sun.hasAny() ? Fmt.duration(day.sun.total()) : L.t("nd");
-        return L.f("day_totals", mm, sun);
+        String sunText = day.sun.hasAny() ? Fmt.duration(sun) : L.t("nd");
+        return L.f("day_totals", weekday, mm, sunText);
     }
 
     /** " vers 15 h" ou " entre 14 h et 16 h" pour les heures first..last de hs. */

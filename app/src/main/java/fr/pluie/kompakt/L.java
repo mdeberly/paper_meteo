@@ -378,13 +378,13 @@ final class L {
                 ", vento forte da {0} fino a {1} km/h", ", vento forte de {0} até {1} km/h", ", silny wiatr {0} do {1} km/h");
         put("wind_light", ", vent faible", ", light wind", ", schwacher Wind", ", viento flojo", ", vento debole",
                 ", vento fraco", ", słaby wiatr");
-        put("day_totals", "Sur la journée : {0} de pluie entre 8 h et 20 h, {1} de soleil.",
-                "For the day: {0} of rain between 8 am and 8 pm, {1} of sunshine.",
-                "Über den Tag: {0} Regen zwischen 8 und 20 Uhr, {1} Sonne.",
-                "En el día: {0} de lluvia entre las 8 y las 20 h, {1} de sol.",
-                "Nella giornata: {0} di pioggia tra le 8 e le 20, {1} di sole.",
-                "No dia: {0} de chuva entre as 8 e as 20 h, {1} de sol.",
-                "W ciągu dnia: {0} deszczu między 8 a 20, {1} słońca.");
+        put("day_totals", "Au total entre 8 h et 22 h ce {0} : {1} de pluie et {2} d'ensoleillement.",
+                "In total between 8 am and 10 pm this {0}: {1} of rain and {2} of sunshine.",
+                "Insgesamt zwischen 8 und 22 Uhr an diesem {0}: {1} Regen und {2} Sonnenschein.",
+                "En total entre las 8 y las 22 h de este {0}: {1} de lluvia y {2} de sol.",
+                "In totale oggi, {0}, tra le 8 e le 22: {1} di pioggia e {2} di sole.",
+                "No total hoje, {0}, entre as 8 e as 22 h: {1} de chuva e {2} de sol.",
+                "Łącznie dziś ({0}) między 8 a 22: {1} deszczu i {2} słońca.");
         put("no_forecast", "Pas de prévision disponible pour les heures à venir.", "No forecast available for the coming hours.",
                 "Keine Vorhersage für die nächsten Stunden.", "No hay previsión para las próximas horas.",
                 "Nessuna previsione per le prossime ore.", "Sem previsão para as próximas horas.",
