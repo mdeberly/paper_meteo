@@ -223,7 +223,9 @@ public class RadarView extends View {
         used.add(new RectF(mx - dp(8), my - dp(8), mx + dp(8) + centerLabelWidth(), my + dp(8)));
         used.add(new RectF(box.left, box.bottom - dp(16), box.right, box.bottom)); // mention des sources
         float dot = dp(2.5f);
-        int shown = 0;
+        // Placement de toutes les étiquettes possibles, puis on ne garde que la moitié la plus importante.
+        List<MapData.City> placed = new ArrayList<>();
+        List<float[]> at = new ArrayList<>(); // x, y, 1 si étiquette à gauche du point
         for (MapData.City city : map.cities) {
             if (city.rank > maxRank) continue;
             float x = (float) (mx + (city.x - cx) * scale), y = (float) (my + (city.y - cy) * scale);
@@ -235,13 +237,19 @@ public class RadarView extends View {
             for (RectF u : used) if (RectF.intersects(u, r)) { free = false; break; }
             if (!free) continue;
             used.add(r);
+            placed.add(city);
+            at.add(new float[]{x, y, r.left < x - dot * 2 ? 1 : 0});
+            if (placed.size() >= 120) break;
+        }
+        int keep = (placed.size() + 1) / 2;
+        for (int i = 0; i < keep; i++) {
+            float[] p = at.get(i);
+            boolean left = p[2] == 1;
             fill.setStyle(Paint.Style.FILL);
             fill.setColor(Ui.INK);
-            c.drawCircle(x, y, dot, fill);
-            boolean left = r.left < x - dot * 2;
+            c.drawCircle(p[0], p[1], dot, fill);
             text.setTextAlign(left ? Paint.Align.RIGHT : Paint.Align.LEFT);
-            outlined(c, city.name, left ? x - dot * 2 : x + dot * 2, y + sp(4), dp(2.5f));
-            if (++shown >= 120) break;
+            outlined(c, placed.get(i).name, left ? p[0] - dot * 2 : p[0] + dot * 2, p[1] + sp(4), dp(2.5f));
         }
         text.setTextAlign(Paint.Align.LEFT);
     }
