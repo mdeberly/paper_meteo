@@ -12,7 +12,7 @@ import java.util.Locale;
 
 /**
  * Images de l'onglet Radar, toutes issues de RainViewer : une image de 512 px centrée sur le lieu
- * par instant. Passé : jusqu'à 2 h 30 (l'offre gratuite en garde environ 2 h), une image par quart d'heure.
+ * par instant. Passé : les 2 dernières heures, une image toutes les 10 min (le rythme de RainViewer).
  * Futur : les images de prévision immédiate (« nowcast ») si RainViewer en fournit.
  * Tout est en Mercator normalisé (0..1), comme {@link MapData}.
  */
@@ -54,7 +54,7 @@ final class RadarData {
 
     /** Zoom maximal des images RainViewer gratuites ; au-delà, on agrandit l'image du zoom 7. */
     static final int MAX_RADAR_ZOOM = 7;
-    private static final long PAST_SECONDS = 150 * 60, STEP_SECONDS = 15 * 60;
+    private static final long PAST_SECONDS = 120 * 60, STEP_SECONDS = 10 * 60;
 
     /**
      * Couleurs des niveaux 1 à 6, de la bruine à l'averse violente. Couleur : palette habituelle des radars
@@ -114,8 +114,8 @@ final class RadarData {
         JSONObject radar = meta.getJSONObject("radar");
         JSONArray past = radar.optJSONArray("past");
         if (past == null || past.length() == 0) throw new Exception("pas d'images");
-        // Passé : une image par quart d'heure, de la plus récente jusqu'à 2 h 30 avant. RainViewer en
-        // fournit une toutes les 10 min : on prend la plus proche de chaque quart d'heure.
+        // Passé : une image toutes les 10 min, de la plus récente jusqu'à 2 h avant (la plus proche de
+        // chaque créneau, au cas où une image manquerait).
         List<JSONObject> picks = new ArrayList<>();
         long last = past.getJSONObject(past.length() - 1).getLong("time");
         for (long target = last; target >= last - PAST_SECONDS; target -= STEP_SECONDS) {
