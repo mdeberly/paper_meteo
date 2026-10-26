@@ -148,7 +148,7 @@ public class RadarView extends View {
         text.setTypeface(Typeface.DEFAULT);
         text.setTextSize(sp(10));
         text.setTextAlign(Paint.Align.LEFT);
-        String credit = "Radar RainViewer · Natural Earth";
+        String credit = "Radar RainViewer · Natural Earth · GeoNames";
         outlined(c, credit, dp(4), box.bottom - dp(4), dp(2.5f));
         c.restore();
 
@@ -216,7 +216,8 @@ public class RadarView extends View {
         text.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         text.setTextSize(sp(12));
         text.setTextAlign(Paint.Align.LEFT);
-        int maxRank = zoom >= 8 ? 10 : zoom - 1;
+        // Importance (0 : plus de 5 M d'habitants … 8 : plus de 15 000, 9 : plus de 5 000) selon le zoom.
+        int maxRank = zoom <= 5 ? 5 : zoom == 6 ? 6 : zoom == 7 ? 8 : 9;
         List<RectF> used = new ArrayList<>();
         float mx = box.centerX(), my = box.centerY();
         used.add(new RectF(mx - dp(8), my - dp(8), mx + dp(8) + centerLabelWidth(), my + dp(8)));
@@ -240,7 +241,7 @@ public class RadarView extends View {
             boolean left = r.left < x - dot * 2;
             text.setTextAlign(left ? Paint.Align.RIGHT : Paint.Align.LEFT);
             outlined(c, city.name, left ? x - dot * 2 : x + dot * 2, y + sp(4), dp(2.5f));
-            if (++shown >= 40) break;
+            if (++shown >= 120) break;
         }
         text.setTextAlign(Paint.Align.LEFT);
     }

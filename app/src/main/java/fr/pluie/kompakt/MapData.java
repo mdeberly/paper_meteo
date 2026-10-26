@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Fond de carte de l'onglet Radar (Natural Earth, domaine public) : contours des pays et villes,
+ * Fond de carte de l'onglet Radar : contours des pays (Natural Earth, domaine public) et villes (GeoNames, CC BY 4.0),
  * en coordonnées Mercator normalisées (0..1, comme les tuiles du radar). Chargé une seule fois.
  * Fichiers produits par tools/make_map.py.
  */
@@ -39,7 +39,7 @@ final class MapData {
     static final class City {
         final String name;
         final double x, y;
-        /** Importance Natural Earth : 0 (capitales, mégapoles) à 10 (petites villes). */
+        /** Importance selon la population : 0 (plus de 5 M d'habitants) à 9 (plus de 5 000). */
         final int rank;
 
         City(String name, double x, double y, int rank) {

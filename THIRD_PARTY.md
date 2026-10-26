@@ -26,6 +26,9 @@ Données © contributeurs OpenStreetMap, sous licence ODbL : https://www.openstr
 
 - Images radar (passé et, si disponible, prévision immédiate) : RainViewer, API Weather Maps
   (https://www.rainviewer.com/api.html), gratuite pour un usage personnel, mention « RainViewer » affichée sur la carte.
-- Fond de carte : Natural Earth (https://www.naturalearthdata.com), domaine public. Fichiers
-  `app/src/main/assets/map/borders.bin` et `cities.tsv`, produits par `tools/make_map.py`.
+- Contours des pays : Natural Earth (https://www.naturalearthdata.com), domaine public
+  (`app/src/main/assets/map/borders.bin`).
+- Villes : GeoNames (https://www.geonames.org), licence CC BY 4.0, via le fichier `cities.pbf` du paquet npm
+  « all-the-cities » 3.1.0 (MIT) ; plus de 5 000 habitants en Europe, plus de 15 000 ailleurs
+  (`app/src/main/assets/map/cities.tsv`). Les deux fichiers sont produits par `tools/make_map.py`.
 - Code de l'onglet écrit pour Paper Meteo (aucun code repris de kRadar).

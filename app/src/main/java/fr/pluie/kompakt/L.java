@@ -288,13 +288,13 @@ final class L {
         put("about", "À propos", "About", "Über die App", "Acerca de", "Informazioni", "Sobre", "O aplikacji");
         put("version", "Version {0}", "Version {0}", "Version {0}", "Versión {0}", "Versione {0}", "Versão {0}", "Wersja {0}");
         put("credits",
-                "Prévisions : Open-Meteo.com (CC BY 4.0). Fêtes PL, DE, CZ, SE, NO, DK : namedays © Filip Tammergård (MIT). Communes : © OpenStreetMap (ODbL). Radar : RainViewer. Fond de carte : Natural Earth.",
-                "Forecasts: Open-Meteo.com (CC BY 4.0). Name days PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Places: © OpenStreetMap (ODbL). Radar: RainViewer. Base map: Natural Earth.",
-                "Vorhersagen: Open-Meteo.com (CC BY 4.0). Namenstage PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Orte: © OpenStreetMap (ODbL). Radar: RainViewer. Karte: Natural Earth.",
-                "Previsiones: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Lugares: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth.",
-                "Previsioni: Open-Meteo.com (CC BY 4.0). Onomastici PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Località: © OpenStreetMap (ODbL). Radar: RainViewer. Mappa: Natural Earth.",
-                "Previsões: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Locais: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth.",
-                "Prognozy: Open-Meteo.com (CC BY 4.0). Imieniny PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Miejscowości: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth.");
+                "Prévisions : Open-Meteo.com (CC BY 4.0). Fêtes PL, DE, CZ, SE, NO, DK : namedays © Filip Tammergård (MIT). Communes : © OpenStreetMap (ODbL). Radar : RainViewer. Fond de carte : Natural Earth, villes GeoNames (CC BY 4.0).",
+                "Forecasts: Open-Meteo.com (CC BY 4.0). Name days PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Places: © OpenStreetMap (ODbL). Radar: RainViewer. Base map: Natural Earth, cities GeoNames (CC BY 4.0).",
+                "Vorhersagen: Open-Meteo.com (CC BY 4.0). Namenstage PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Orte: © OpenStreetMap (ODbL). Radar: RainViewer. Karte: Natural Earth, Orte GeoNames (CC BY 4.0).",
+                "Previsiones: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Lugares: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth, GeoNames (CC BY 4.0).",
+                "Previsioni: Open-Meteo.com (CC BY 4.0). Onomastici PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Località: © OpenStreetMap (ODbL). Radar: RainViewer. Mappa: Natural Earth, GeoNames (CC BY 4.0).",
+                "Previsões: Open-Meteo.com (CC BY 4.0). Santos PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Locais: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth, GeoNames (CC BY 4.0).",
+                "Prognozy: Open-Meteo.com (CC BY 4.0). Imieniny PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Miejscowości: © OpenStreetMap (ODbL). Radar: RainViewer. Mapa: Natural Earth, GeoNames (CC BY 4.0).");
         put("about_text",
                 "Application créée par Maximilien DEBERLY, pharmacien, avec l'aide de l'IA Claude pour le code.",
                 "App created by Maximilien DEBERLY, pharmacist, with the help of the AI Claude for the code.",

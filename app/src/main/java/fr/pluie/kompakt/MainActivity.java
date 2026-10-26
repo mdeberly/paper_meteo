@@ -479,6 +479,7 @@ public class MainActivity extends Activity {
         if (i == tab) return;
         tab = i;
         positionList = tab == TAB_WEATHER;
+        if (tab == TAB_RADAR) radarZoomLevel = RADAR_DEFAULT_ZOOM;
         render();
     }
 
@@ -788,8 +789,12 @@ public class MainActivity extends Activity {
         return p;
     }
 
+    /** Zoom du radar, remis à RADAR_DEFAULT_ZOOM (≈ 400 km de large) à chaque ouverture de l'onglet. */
+    private static final int RADAR_DEFAULT_ZOOM = 7;
+    private int radarZoomLevel = RADAR_DEFAULT_ZOOM;
+
     private int radarZoom() {
-        return Math.max(RADAR_MIN_ZOOM, Math.min(RADAR_MAX_ZOOM, prefs.getInt("radar_zoom", 8)));
+        return Math.max(RADAR_MIN_ZOOM, Math.min(RADAR_MAX_ZOOM, radarZoomLevel));
     }
 
     private void radarButton(int k) {
@@ -798,7 +803,7 @@ public class MainActivity extends Activity {
             case 4: {
                 int z = radarZoom() + (k == 0 ? -1 : 1);
                 if (z < RADAR_MIN_ZOOM || z > RADAR_MAX_ZOOM) return;
-                prefs.edit().putInt("radar_zoom", z).apply();
+                radarZoomLevel = z;
                 renderRadar();
                 break;
             }
