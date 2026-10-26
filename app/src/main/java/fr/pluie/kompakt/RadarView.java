@@ -33,12 +33,12 @@ public class RadarView extends View {
 
     private Bitmap base;
     private String baseKey = "";
+    private final java.util.Map<String, Bitmap> rainCache = new java.util.HashMap<>();
 
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint halo = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint image = new Paint(Paint.FILTER_BITMAP_FLAG);
 
     private static final int SEA = Ui.COLOR ? 0xFFDCE7EC : 0xFFFFFFFF;
     private static final int LAND = Ui.COLOR ? 0xFFFBF3E8 : 0xFFFFFFFF;
@@ -82,8 +82,14 @@ public class RadarView extends View {
     void setFrames(List<RadarData.Frame> f) {
         frames = new ArrayList<>(f);
         frames.sort((a, b) -> Long.compare(a.time, b.time));
+        clearRain();
         index = nowIndex();
         invalidate();
+    }
+
+    private void clearRain() {
+        for (Bitmap b : rainCache.values()) b.recycle();
+        rainCache.clear();
     }
 
     void setMessage(String m) {
@@ -128,17 +134,14 @@ public class RadarView extends View {
             base = Bitmap.createBitmap((int) w, (int) box.height(), Bitmap.Config.ARGB_8888);
             drawBase(new Canvas(base), w, box.height(), scale);
             baseKey = key;
+            clearRain();
         }
         c.drawBitmap(base, 0, box.top, null);
 
         c.save();
         c.clipRect(box);
         RadarData.Frame f = index >= 0 && index < frames.size() ? frames.get(index) : null;
-        if (f != null) {
-            float l = (float) (mx + (f.cx - f.half - cx) * scale), t = (float) (my + (f.cy - f.half - cy) * scale);
-            float r = (float) (mx + (f.cx + f.half - cx) * scale), b = (float) (my + (f.cy + f.half - cy) * scale);
-            c.drawBitmap(f.image, null, new RectF(l, t, r, b), image);
-        }
+        if (f != null) c.drawBitmap(rain(f, box, scale), box.left, box.top, null);
         drawCities(c, box, scale);
         drawCenter(c, mx, my);
         // Mention des sources, en bas à gauche de la carte.
@@ -156,6 +159,30 @@ public class RadarView extends View {
 
         drawHeader(c, f, w, headH);
         drawFooter(c, w, h - footH, footH);
+    }
+
+    /** Pluie de l'image f, calculée point par point à la résolution de l'écran (gardée en cache). */
+    private Bitmap rain(RadarData.Frame f, RectF box, float scale) {
+        String key = baseKey + "/" + f.time;
+        Bitmap b = rainCache.get(key);
+        if (b != null) return b;
+        int w = (int) box.width(), h = (int) box.height();
+        int[] px = new int[w * h];
+        // Écran → pixels de l'image radar.
+        double perPx = 1 / scale, srcPerNorm = f.size / (2 * f.half);
+        double u0 = ((cx - w / 2.0 * perPx) - (f.cx - f.half)) * srcPerNorm - 0.5;
+        double v0 = ((cy - h / 2.0 * perPx) - (f.cy - f.half)) * srcPerNorm - 0.5;
+        float du = (float) (perPx * srcPerNorm);
+        for (int y = 0; y < h; y++) {
+            float v = (float) (v0 + (y + 0.5) * du);
+            for (int x = 0; x < w; x++) {
+                float a = f.at((float) (u0 + (x + 0.5) * du), v);
+                px[y * w + x] = RadarData.COLOR_OF[Math.min(255, Math.round(a))];
+            }
+        }
+        b = Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888);
+        rainCache.put(key, b);
+        return b;
     }
 
     private void drawBase(Canvas c, float w, float h, float scale) {
@@ -325,12 +352,16 @@ public class RadarView extends View {
         text.setTypeface(Typeface.DEFAULT);
         text.setTextAlign(Paint.Align.CENTER);
         fill.setStyle(Paint.Style.FILL);
+        // Bande en dégradé, avec les mêmes couleurs que la carte (intensité 22 à 255).
+        for (int x = 0; x < (int) w; x++) {
+            int a = 22 + Math.round((255 - 22) * x / Math.max(1f, w - 1));
+            fill.setColor(LAND);
+            c.drawRect(x, top, x + 1, top + bh, fill);
+            fill.setColor(RadarData.COLOR_OF[a]);
+            c.drawRect(x, top, x + 1, top + bh, fill);
+        }
         for (int i = 0; i < n; i++) {
             float l = seg * i;
-            fill.setColor(LAND);
-            c.drawRect(l, top, l + seg, top + bh, fill);
-            fill.setColor(RadarData.RAIN_COLORS[i + 1]);
-            c.drawRect(l, top, l + seg, top + bh, fill);
             text.setTextSize(sp(11));
             float tw = text.measureText(names[i]);
             if (tw > seg - dp(2)) text.setTextSize(sp(11) * (seg - dp(2)) / tw);
