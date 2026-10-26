@@ -210,7 +210,10 @@ public class RadarView extends View {
         c.drawPath(p, line);
     }
 
-    /** Villes : les plus importantes d'abord, sans chevauchement, plus nombreuses quand on zoome. */
+    /** Nombre de villes nommées sur la carte, quel que soit le zoom. */
+    private static final int MAX_CITIES = 10;
+
+    /** Villes : les plus importantes d'abord, sans chevauchement, une dizaine à chaque zoom. */
     private void drawCities(Canvas c, RectF box, float scale) {
         if (map == null) return;
         text.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
@@ -223,7 +226,7 @@ public class RadarView extends View {
         used.add(new RectF(mx - dp(8), my - dp(8), mx + dp(8) + centerLabelWidth(), my + dp(8)));
         used.add(new RectF(box.left, box.bottom - dp(16), box.right, box.bottom)); // mention des sources
         float dot = dp(2.5f);
-        // Placement de toutes les étiquettes possibles, puis on ne garde que la moitié la plus importante.
+        // Placement des étiquettes, des plus importantes aux moins importantes, jusqu'à une dizaine.
         List<MapData.City> placed = new ArrayList<>();
         List<float[]> at = new ArrayList<>(); // x, y, 1 si étiquette à gauche du point
         for (MapData.City city : map.cities) {
@@ -239,9 +242,9 @@ public class RadarView extends View {
             used.add(r);
             placed.add(city);
             at.add(new float[]{x, y, r.left < x - dot * 2 ? 1 : 0});
-            if (placed.size() >= 120) break;
+            if (placed.size() >= MAX_CITIES) break;
         }
-        int keep = (placed.size() + 1) / 2;
+        int keep = placed.size();
         for (int i = 0; i < keep; i++) {
             float[] p = at.get(i);
             boolean left = p[2] == 1;
