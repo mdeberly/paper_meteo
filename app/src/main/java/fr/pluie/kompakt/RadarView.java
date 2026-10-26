@@ -116,7 +116,7 @@ public class RadarView extends View {
     protected void onDraw(Canvas c) {
         float w = getWidth(), h = getHeight();
         c.drawColor(Ui.BG);
-        float headH = dp(30), footH = dp(28);
+        float headH = dp(30), footH = Ui.COLOR ? dp(58) : dp(28);
         RectF box = new RectF(0, headH, w, h - footH);
         float scale = (float) (256.0 * (1 << zoom) * w / 512.0); // pixels écran par unité Mercator
         float mx = box.centerX(), my = box.centerY();
@@ -314,5 +314,28 @@ public class RadarView extends View {
                 }
             }
         }
+        if (Ui.COLOR) drawLegend(c, w, top + dp(30));
+    }
+
+    /** Couleur seulement : bande des 6 couleurs, chacune avec son intensité en dessous. */
+    private void drawLegend(Canvas c, float w, float top) {
+        String[] names = L.t("radar_levels").split("\\|");
+        int n = Math.min(names.length, RadarData.RAIN_COLORS.length - 1);
+        float seg = w / n, bh = dp(8);
+        text.setTypeface(Typeface.DEFAULT);
+        text.setTextAlign(Paint.Align.CENTER);
+        fill.setStyle(Paint.Style.FILL);
+        for (int i = 0; i < n; i++) {
+            float l = seg * i;
+            fill.setColor(LAND);
+            c.drawRect(l, top, l + seg, top + bh, fill);
+            fill.setColor(RadarData.RAIN_COLORS[i + 1]);
+            c.drawRect(l, top, l + seg, top + bh, fill);
+            text.setTextSize(sp(11));
+            float tw = text.measureText(names[i]);
+            if (tw > seg - dp(2)) text.setTextSize(sp(11) * (seg - dp(2)) / tw);
+            c.drawText(names[i], l + seg / 2, top + bh + sp(13), text);
+        }
+        text.setTextAlign(Paint.Align.LEFT);
     }
 }

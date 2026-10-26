@@ -254,6 +254,10 @@ final class L {
         put("radar_ago", "il y a {0}", "{0} ago", "vor {0}", "hace {0}", "{0} fa", "há {0}", "{0} temu");
         put("radar_in", "prévision dans {0}", "forecast in {0}", "Vorhersage in {0}", "previsión en {0}",
                 "previsione tra {0}", "previsão daqui a {0}", "prognoza za {0}");
+        put("radar_levels", "bruine|faible|modérée|forte|très forte|extrême", "drizzle|light|moderate|heavy|very heavy|extreme",
+                "Niesel|leicht|mäßig|stark|sehr stark|extrem", "llovizna|débil|moderada|fuerte|muy fuerte|extrema",
+                "pioviggine|debole|moderata|forte|molto forte|estrema", "chuvisco|fraca|moderada|forte|muito forte|extrema",
+                "mżawka|słaby|umiarkowany|silny|b. silny|ekstremalny");
         put("radar_loading", "Chargement du radar…", "Loading radar…", "Radar wird geladen…", "Cargando radar…",
                 "Caricamento radar…", "A carregar o radar…", "Ładowanie radaru…");
         put("radar_failed", "Radar indisponible (réseau ?)", "Radar unavailable (network?)", "Radar nicht verfügbar (Netz?)",

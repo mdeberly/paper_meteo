@@ -108,11 +108,11 @@ public class MainActivity extends Activity {
     private final Runnable player = new Runnable() {
         @Override public void run() {
             if (!playing || radarView.count() == 0) return;
+            // Une seule lecture : arrêt sur la dernière image disponible.
             int next = radarView.index() + 1;
-            boolean wrap = next >= radarView.count();
-            radarView.show(wrap ? 0 : next);
-            // Petite pause sur la dernière image avant de reprendre au début.
-            ui.postDelayed(this, next == radarView.count() - 1 ? 1600 : 800);
+            radarView.show(next);
+            if (next >= radarView.count() - 1) stopPlay();
+            else ui.postDelayed(this, 800);
         }
     };
     private TextView summaryText, soonView;
@@ -813,6 +813,8 @@ public class MainActivity extends Activity {
             default:
                 if (playing) stopPlay();
                 else if (radarView.count() > 1) {
+                    // Depuis la dernière image, la lecture repart de la plus ancienne.
+                    if (radarView.index() >= radarView.count() - 1) radarView.show(0);
                     playing = true;
                     playButton.setText("❚❚");
                     ui.postDelayed(player, 300);
