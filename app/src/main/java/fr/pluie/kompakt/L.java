@@ -287,6 +287,9 @@ final class L {
                 "Automatycznie (język telefonu)");
         put("about", "À propos", "About", "Über die App", "Acerca de", "Informazioni", "Sobre", "O aplikacji");
         put("version", "Version {0}", "Version {0}", "Version {0}", "Versión {0}", "Versione {0}", "Versão {0}", "Wersja {0}");
+        put("latest_release", "Dernière version disponible :", "Latest version available:", "Neueste verfügbare Version:",
+                "Última versión disponible:", "Ultima versione disponibile:", "Última versão disponível:",
+                "Najnowsza dostępna wersja:");
         put("credits",
                 "Prévisions : Open-Meteo.com (CC BY 4.0). Fêtes PL, DE, CZ, SE, NO, DK : namedays © Filip Tammergård (MIT). Communes : © OpenStreetMap (ODbL). Radar : RainViewer. Fond de carte : Natural Earth, villes GeoNames (CC BY 4.0).",
                 "Forecasts: Open-Meteo.com (CC BY 4.0). Name days PL, DE, CZ, SE, NO, DK: namedays © Filip Tammergård (MIT). Places: © OpenStreetMap (ODbL). Radar: RainViewer. Base map: Natural Earth, cities GeoNames (CC BY 4.0).",

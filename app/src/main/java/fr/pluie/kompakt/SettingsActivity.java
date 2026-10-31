@@ -173,9 +173,13 @@ public class SettingsActivity extends Activity {
                 .show();
     }
 
+    /** Page de la dernière version publiée, pour vérifier qu'on est à jour. */
+    private static final String RELEASES_URL = "https://github.com/mdeberly/paper_meteo/releases/latest";
+
     private void showAbout() {
         TextView body = text(17, false);
         body.setText(L.t("about_text") + "\n\nwww.deberly.fr\n\n" + L.f("version", versionName())
+                + "\n" + L.t("latest_release") + "\n" + RELEASES_URL
                 + "\n\n" + L.t("credits"));
         body.setPadding(dp(24), dp(12), dp(24), 0);
         body.setLinkTextColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);
