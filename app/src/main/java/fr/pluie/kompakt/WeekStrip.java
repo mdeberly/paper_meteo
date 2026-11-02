@@ -139,7 +139,7 @@ public class WeekStrip extends View {
 
     /** 9 jours en 3 × 3 ; sinon 4 colonnes. */
     private int columns() {
-        return labels != null && labels.length == 9 ? 3 : 4;
+        return labels != null && (labels.length == 9 || labels.length == 6) ? 3 : 4;
     }
 
     private int rows() {

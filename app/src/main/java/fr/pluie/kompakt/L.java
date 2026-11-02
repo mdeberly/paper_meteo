@@ -126,7 +126,7 @@ final class L {
     static {
         // Onglets, boutons, écran principal.
         put("tab_summary", "Aujourd'hui", "Today", "Heute", "Hoy", "Oggi", "Hoje", "Dziś");
-        put("tab_weather", "Semaine", "Week", "Woche", "Semana", "Settimana", "Semana", "Tydzień");
+        put("tab_weather", "Prévisions", "Forecast", "Vorhersage", "Previsión", "Previsioni", "Previsão", "Prognoza");
         put("tab_radar", "Radar", "Radar", "Radar", "Radar", "Radar", "Radar", "Radar");
         put("tab_eph", "Éphéméride", "Almanac", "Kalender", "Efemérides", "Effemeridi", "Efemérides", "Kalendarz");
         put("refresh", "Actualiser", "Refresh", "Aktualisieren", "Actualizar", "Aggiorna", "Atualizar", "Odśwież");
@@ -185,6 +185,10 @@ final class L {
         put("auto_country", "Automatique (pays du téléphone)", "Automatic (phone's country)", "Automatisch (Land des Telefons)",
                 "Automático (país del teléfono)", "Automatico (paese del telefono)", "Automático (país do telefone)",
                 "Automatycznie (kraj telefonu)");
+        put("humidity", "Humidité {0} %", "Humidity {0}%", "Feuchte {0} %", "Humedad {0} %", "Umidità {0} %",
+                "Humidade {0} %", "Wilgotność {0}%");
+        put("gusts", "Rafales à {0} km/h", "Gusts to {0} km/h", "Böen bis {0} km/h", "Rachas de {0} km/h",
+                "Raffiche a {0} km/h", "Rajadas de {0} km/h", "Porywy do {0} km/h");
         put("feels", "Ressenti {0}", "Feels like {0}", "Gefühlt {0}", "Sensación {0}", "Percepita {0}", "Sensação {0}",
                 "Odczuwalna {0}");
         put("sunrise", "Lever du soleil", "Sunrise", "Sonnenaufgang", "Salida del sol", "Alba", "Nascer do sol", "Wschód słońca");

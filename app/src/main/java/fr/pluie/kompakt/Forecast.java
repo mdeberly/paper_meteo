@@ -28,7 +28,7 @@ public class Forecast {
     public Current current;
 
     public static final class Current {
-        public double temp = Double.NaN, feels = Double.NaN, wind = Double.NaN, windDir = Double.NaN;
+        public double temp = Double.NaN, feels = Double.NaN, wind = Double.NaN, windDir = Double.NaN, gust = Double.NaN;
         public double cloud = -1, precip, visibility = Double.NaN, snowfall;
         public double rh = Double.NaN, dew = Double.NaN, lowCloud = Double.NaN;
         public int code = -1;
@@ -102,6 +102,7 @@ public class Forecast {
             c.feels = cur.optDouble("apparent_temperature", Double.NaN);
             c.wind = cur.optDouble("wind_speed_10m", Double.NaN);
             c.windDir = cur.optDouble("wind_direction_10m", Double.NaN);
+            c.gust = cur.optDouble("wind_gusts_10m", Double.NaN);
             c.cloud = cur.optDouble("cloud_cover", -1);
             c.precip = cur.optDouble("precipitation", 0);
             c.code = cur.optInt("weather_code", -1);

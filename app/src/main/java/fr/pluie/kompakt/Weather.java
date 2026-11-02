@@ -330,7 +330,8 @@ final class Weather {
             long lo = Fmt.temp(min), hi = Fmt.temp(max);
             s.append(lo == hi ? L.f("temp_around", Fmt.degUnit(min)) : L.f("temp_range", lo, Fmt.degUnit(max)));
         }
-        s.append(wind(hs));
+        // « km/h » insécable : pas de retour à la ligne après la barre oblique.
+        s.append(wind(hs).replace("km/h", "km\u2060/\u2060h"));
         return s.append('.').toString();
     }
 
