@@ -116,7 +116,10 @@ public class MainActivity extends Activity {
             else ui.postDelayed(this, 800);
         }
     };
-    private TextView summaryText, soonView;
+    private TextView summaryText, soonView, soonTotal;
+    private View soonIcon;
+    private int soonKind = Weather.NONE;
+    private boolean soonNight;
     private CurrentView currentView;
     private DayView todayView;
     private TextView todayRise, todaySet, todayTempInfo, todayTemps;
@@ -478,11 +481,34 @@ public class MainActivity extends Activity {
         summaryText.setLineSpacing(0, 1.1f);
         p.addView(summaryText);
         p.addView(thickRule());
-        TextView l = text(20, false);
+        // Les 2 prochaines heures : icône du temps, intitulé discret et message, cumul en grand à droite.
+        LinearLayout soon = new LinearLayout(this);
+        soon.setOrientation(LinearLayout.HORIZONTAL);
+        soon.setGravity(Gravity.CENTER_VERTICAL);
+        soonIcon = new View(this) {
+            @Override protected void onDraw(android.graphics.Canvas c) {
+                c.drawColor(Ui.BG);
+                float s = Math.min(getWidth(), getHeight());
+                WeatherIcon.draw(c, soonKind, soonNight, getWidth() / 2f, getHeight() / 2f, s, Ui.INK, Ui.BG);
+            }
+        };
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(44), dp(44));
+        ilp.rightMargin = dp(10);
+        soon.addView(soonIcon, ilp);
+        LinearLayout soonText = new LinearLayout(this);
+        soonText.setOrientation(LinearLayout.VERTICAL);
+        TextView l = text(14, false);
+        l.setTextColor(Ui.MUTED);
         l.setText(L.t("next2h"));
-        p.addView(l);
-        soonView = text(21, true);
-        p.addView(soonView);
+        soonText.addView(l);
+        soonView = text(19, false);
+        soonView.setLineSpacing(0, 1.05f);
+        soonText.addView(soonView);
+        soon.addView(soonText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        soonTotal = text(26, false);
+        soonTotal.setPadding(dp(8), 0, 0, 0);
+        soon.addView(soonTotal, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        p.addView(soon);
         p.addView(thickRule());
         DayView header = new DayView(this, true);
         p.addView(header, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, header.rowHeight()));
@@ -640,6 +666,9 @@ public class MainActivity extends Activity {
         if (forecast == null) {
             summaryText.setText(L.t("no_data"));
             soonView.setText("");
+            soonTotal.setText("");
+            soonKind = Weather.NONE;
+            soonIcon.invalidate();
             todayView.setCells(null);
             renderTodayRows(zone, LocalDate.now(zone));
             return;
@@ -647,6 +676,17 @@ public class MainActivity extends Activity {
         LocalDateTime now = LocalDateTime.now(zone);
         summaryText.setText(String.join("\n", Weather.summary(forecast, zone, lat(), lon(), now)));
         soonView.setText(Weather.nextTwoHours(forecast, zone, lat(), lon(), now));
+        List<Weather.Hour> next = Weather.hours(forecast, zone, lat(), lon(), now.toLocalDate(), now.getHour(), 2);
+        double mm = 0;
+        int nights = 0;
+        for (Weather.Hour x : next) {
+            if (x.has) mm += x.mm;
+            if (x.night) nights++;
+        }
+        soonKind = Weather.kindOf(next);
+        soonNight = nights * 2 > next.size();
+        soonIcon.invalidate();
+        soonTotal.setText(mm >= 0.1 ? Fmt.total(mm) + "\u00a0mm" : "");
         renderTodayRows(zone, now.toLocalDate());
         // Le reste de la journée, heure par heure, de l'heure en cours à 23 h.
         Day d = forecast.day(now.toLocalDate());
