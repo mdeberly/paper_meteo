@@ -189,6 +189,24 @@ final class L {
                 "Humidade {0} %", "Wilgotność {0}%");
         put("gusts", "Rafales à {0} km/h", "Gusts to {0} km/h", "Böen bis {0} km/h", "Rachas de {0} km/h",
                 "Raffiche a {0} km/h", "Rajadas de {0} km/h", "Porywy do {0} km/h");
+        // Aujourd'hui : heures des extrêmes et écarts des maxi avec la veille et le lendemain.
+        put("temp_times", "Maxi vers {0}, mini vers {1}", "High around {0}, low around {1}", "Höchstwert gegen {0}, Tiefstwert gegen {1}",
+                "Máxima hacia las {0}, mínima hacia las {1}", "Massima verso le {0}, minima verso le {1}",
+                "Máxima por volta das {0}, mínima por volta das {1}", "Maks. około {0}, min. około {1}");
+        put("than_yesterday", "{0}° de plus qu'hier|{0}° de moins qu'hier|comme hier",
+                "{0}° warmer than yesterday|{0}° cooler than yesterday|same as yesterday",
+                "{0}° wärmer als gestern|{0}° kühler als gestern|wie gestern",
+                "{0}° más que ayer|{0}° menos que ayer|como ayer",
+                "{0}° in più di ieri|{0}° in meno di ieri|come ieri",
+                "{0}° a mais do que ontem|{0}° a menos do que ontem|como ontem",
+                "o {0}° cieplej niż wczoraj|o {0}° chłodniej niż wczoraj|jak wczoraj");
+        put("than_tomorrow", "{0}° de plus que demain|{0}° de moins que demain|comme demain",
+                "{0}° warmer than tomorrow|{0}° cooler than tomorrow|same as tomorrow",
+                "{0}° wärmer als morgen|{0}° kühler als morgen|wie morgen",
+                "{0}° más que mañana|{0}° menos que mañana|como mañana",
+                "{0}° in più di domani|{0}° in meno di domani|come domani",
+                "{0}° a mais do que amanhã|{0}° a menos do que amanhã|como amanhã",
+                "o {0}° cieplej niż jutro|o {0}° chłodniej niż jutro|jak jutro");
         put("feels", "Ressenti {0}", "Feels like {0}", "Gefühlt {0}", "Sensación {0}", "Percepita {0}", "Sensação {0}",
                 "Odczuwalna {0}");
         put("sunrise", "Lever du soleil", "Sunrise", "Sonnenaufgang", "Salida del sol", "Alba", "Nascer do sol", "Wschód słońca");

@@ -119,6 +119,7 @@ public class MainActivity extends Activity {
     private TextView summaryText, soonView;
     private CurrentView currentView;
     private DayView todayView;
+    private TextView todayRise, todaySet, todayTempInfo, todayTemps;
 
     // ---------------------------------------------------------------- cycle de vie
 
@@ -452,6 +453,27 @@ public class MainActivity extends Activity {
         clp.topMargin = dp(2);
         p.addView(currentView, clp);
         p.addView(thickRule());
+        // Lever et coucher du soleil.
+        LinearLayout sunRow = new LinearLayout(this);
+        sunRow.setOrientation(LinearLayout.HORIZONTAL);
+        todayRise = text(21, false);
+        todaySet = text(21, false);
+        sunRow.addView(labelledBig(L.t("sunrise"), todayRise), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        sunRow.addView(labelledBig(L.t("sunset"), todaySet), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        p.addView(sunRow);
+        p.addView(thickRule());
+        // Températures mini / maxi : heures et écarts à gauche, valeurs en grand à droite.
+        LinearLayout tempRow = new LinearLayout(this);
+        tempRow.setOrientation(LinearLayout.HORIZONTAL);
+        tempRow.setGravity(Gravity.CENTER_VERTICAL);
+        todayTempInfo = text(15, false);
+        todayTempInfo.setLineSpacing(0, 1.1f);
+        tempRow.addView(todayTempInfo, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        todayTemps = text(32, false);
+        todayTemps.setGravity(Gravity.END);
+        tempRow.addView(todayTemps, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        p.addView(tempRow);
+        p.addView(thickRule());
         summaryText = text(18, false);
         summaryText.setLineSpacing(0, 1.1f);
         p.addView(summaryText);
@@ -470,6 +492,17 @@ public class MainActivity extends Activity {
         sv.setVerticalScrollBarEnabled(!Ui.COLOR);
         sv.addView(p, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         return sv;
+    }
+
+    /** Intitulé et valeur l'un sous l'autre, à la taille de l'onglet Aujourd'hui. */
+    private LinearLayout labelledBig(String label, TextView value) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TextView l = text(19, false);
+        l.setText(label);
+        box.addView(l);
+        box.addView(value);
+        return box;
     }
 
     private LinearLayout labelled(String label, TextView value) {
@@ -608,11 +641,13 @@ public class MainActivity extends Activity {
             summaryText.setText(L.t("no_data"));
             soonView.setText("");
             todayView.setCells(null);
+            renderTodayRows(zone, LocalDate.now(zone));
             return;
         }
         LocalDateTime now = LocalDateTime.now(zone);
         summaryText.setText(String.join("\n", Weather.summary(forecast, zone, lat(), lon(), now)));
         soonView.setText(Weather.nextTwoHours(forecast, zone, lat(), lon(), now));
+        renderTodayRows(zone, now.toLocalDate());
         // Le reste de la journée, heure par heure, de l'heure en cours à 23 h.
         Day d = forecast.day(now.toLocalDate());
         if (d == null) {
@@ -628,6 +663,40 @@ public class MainActivity extends Activity {
     private static final int[][] SLOTS = {
             {0, 3}, {3, 6}, {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 12}, {12, 13}, {13, 14},
             {14, 15}, {15, 16}, {16, 17}, {17, 18}, {18, 19}, {19, 20}, {20, 21}, {21, 22}, {22, 23}, {23, 24}};
+
+    /** Aujourd'hui : lever et coucher du soleil, températures mini / maxi avec leurs heures et les écarts. */
+    private void renderTodayRows(ZoneId zone, LocalDate today) {
+        Sun sun = Sun.of(today, lat(), lon(), zone);
+        boolean normal = sun.state == Sun.NORMAL;
+        todayRise.setText(normal ? Fmt.clock(sun.rise) : "—");
+        todaySet.setText(normal ? Fmt.clock(sun.set) : "—");
+
+        Day d = forecast == null ? null : forecast.day(today);
+        if (d == null || !d.temp.hasAny()) {
+            todayTemps.setText("");
+            todayTempInfo.setText(L.t("no_data"));
+            return;
+        }
+        int hiH = -1, loH = -1;
+        for (int h = 0; h < 24; h++) {
+            if (!d.temp.has[h]) continue;
+            if (hiH < 0 || d.temp.v[h] > d.temp.v[hiH]) hiH = h;
+            if (loH < 0 || d.temp.v[h] < d.temp.v[loH]) loH = h;
+        }
+        todayTemps.setText(Fmt.deg(d.temp.high()) + " / " + Fmt.deg(d.temp.low()));
+        StringBuilder info = new StringBuilder(L.f("temp_times", L.hour(hiH), L.hour(loH)));
+        Day y = forecast.day(today.minusDays(1)), t = forecast.day(today.plusDays(1));
+        if (y != null && y.temp.hasAny()) info.append('\n').append(compare(d.temp.high() - y.temp.high(), "than_yesterday"));
+        if (t != null && t.temp.hasAny()) info.append('\n').append(compare(d.temp.high() - t.temp.high(), "than_tomorrow"));
+        todayTempInfo.setText(info);
+    }
+
+    /** « 3° de plus qu'hier », « 2° de moins que demain », « comme hier »… (écart des maxi). */
+    private static String compare(double diff, String key) {
+        long n = Math.round(Fmt.fahrenheit ? diff * 9 / 5 : diff);
+        if (n == 0) return Fmt.cap(L.item(key, 2));
+        return L.f(key, Math.abs(n)).split("\\|")[n > 0 ? 0 : 1];
+    }
 
     /** Lignes de la liste heure par heure pour les créneaux donnés ; le créneau contenant hour est mis en avant. */
     private List<DayView.Cell> cells(Day d, ZoneId zone, List<int[]> slots, int hour) {
