@@ -126,7 +126,7 @@ public class MainActivity extends Activity {
     private boolean soonNight;
     private CurrentView currentView;
     private DayView todayView;
-    private TextView todayRise, todaySet, todayTempInfo, todayTemps;
+    private TextView todayRise, todaySet, todayTempInfo, todayMin, todayMax;
 
     // ---------------------------------------------------------------- cycle de vie
 
@@ -496,9 +496,15 @@ public class MainActivity extends Activity {
         todayTempInfo = text(15, false);
         todayTempInfo.setLineSpacing(0, 1.1f);
         tempRow.addView(todayTempInfo, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        todayTemps = text(32, false);
-        todayTemps.setGravity(Gravity.END);
-        tempRow.addView(todayTemps, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        // Mini puis maxi, en grand, avec « Min. » et « Max. » en petit dessous.
+        todayMin = text(32, false);
+        todayMax = text(32, false);
+        tempRow.addView(tempColumn(todayMin, L.t("min_short")));
+        TextView slash = text(32, false);
+        slash.setText(" / ");
+        slash.setPadding(0, 0, 0, dp(16));
+        tempRow.addView(slash);
+        tempRow.addView(tempColumn(todayMax, L.t("max_short")));
         p.addView(tempRow);
         p.addView(thickRule());
         summaryText = text(18, false);
@@ -542,6 +548,18 @@ public class MainActivity extends Activity {
         sv.setVerticalScrollBarEnabled(!Ui.COLOR);
         sv.addView(p, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         return sv;
+    }
+
+    /** Température en grand, centrée au-dessus de son intitulé en petit. */
+    private LinearLayout tempColumn(TextView value, String label) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER_HORIZONTAL);
+        box.addView(value);
+        TextView l = text(14, false);
+        l.setText(label);
+        box.addView(l);
+        return box;
     }
 
     /** Intitulé et valeur l'un sous l'autre, à la taille de l'onglet Aujourd'hui. */
@@ -741,7 +759,8 @@ public class MainActivity extends Activity {
 
         Day d = forecast == null ? null : forecast.day(today);
         if (d == null || !d.temp.hasAny()) {
-            todayTemps.setText("");
+            todayMin.setText("–");
+            todayMax.setText("–");
             todayTempInfo.setText(L.t("no_data"));
             return;
         }
@@ -751,7 +770,8 @@ public class MainActivity extends Activity {
             if (hiH < 0 || d.temp.v[h] > d.temp.v[hiH]) hiH = h;
             if (loH < 0 || d.temp.v[h] < d.temp.v[loH]) loH = h;
         }
-        todayTemps.setText(Fmt.deg(d.temp.high()) + " / " + Fmt.deg(d.temp.low()));
+        todayMin.setText(Fmt.deg(d.temp.low()));
+        todayMax.setText(Fmt.deg(d.temp.high()));
         StringBuilder info = new StringBuilder(L.f("temp_times", L.hour(hiH), L.hour(loH)));
         Day y = forecast.day(today.minusDays(1)), t = forecast.day(today.plusDays(1));
         if (y != null && y.temp.hasAny()) info.append('\n').append(compare(d.temp.high() - y.temp.high(), "than_yesterday"));

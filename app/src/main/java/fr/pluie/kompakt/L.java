@@ -190,9 +190,11 @@ final class L {
         put("gusts", "Rafales à {0} km/h", "Gusts to {0} km/h", "Böen bis {0} km/h", "Rachas de {0} km/h",
                 "Raffiche a {0} km/h", "Rajadas de {0} km/h", "Porywy do {0} km/h");
         // Aujourd'hui : heures des extrêmes et écarts des maxi avec la veille et le lendemain.
-        put("temp_times", "Maxi vers {0}, mini vers {1}", "High around {0}, low around {1}", "Höchstwert gegen {0}, Tiefstwert gegen {1}",
-                "Máxima hacia las {0}, mínima hacia las {1}", "Massima verso le {0}, minima verso le {1}",
-                "Máxima por volta das {0}, mínima por volta das {1}", "Maks. około {0}, min. około {1}");
+        put("temp_times", "Mini vers {1}, maxi vers {0}", "Low around {1}, high around {0}", "Tiefstwert gegen {1}, Höchstwert gegen {0}",
+                "Mínima hacia las {1}, máxima hacia las {0}", "Minima verso le {1}, massima verso le {0}",
+                "Mínima por volta das {1}, máxima por volta das {0}", "Min. około {1}, maks. około {0}");
+        put("min_short", "Min.", "Min.", "Min.", "Mín.", "Min.", "Mín.", "Min.");
+        put("max_short", "Max.", "Max.", "Max.", "Máx.", "Max.", "Máx.", "Maks.");
         put("than_yesterday", "{0}° de plus qu'hier|{0}° de moins qu'hier|comme hier",
                 "{0}° warmer than yesterday|{0}° cooler than yesterday|same as yesterday",
                 "{0}° wärmer als gestern|{0}° kühler als gestern|wie gestern",
