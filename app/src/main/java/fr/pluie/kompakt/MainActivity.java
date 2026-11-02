@@ -544,7 +544,7 @@ public class MainActivity extends Activity {
                 WeatherIcon.draw(c, soonKind, soonNight, getWidth() / 2f, getHeight() / 2f, s, Ui.INK, Ui.BG);
             }
         };
-        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(44), dp(44));
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(Ui.COLOR ? 38 : 44), dp(Ui.COLOR ? 38 : 44));
         ilp.rightMargin = dp(10);
         soon.addView(soonIcon, ilp);
         LinearLayout soonText = new LinearLayout(this);
@@ -553,11 +553,11 @@ public class MainActivity extends Activity {
         l.setTextColor(Ui.MUTED);
         l.setText(L.t("next2h"));
         soonText.addView(l);
-        soonView = text(19, false);
+        soonView = text(Ui.COLOR ? 17 : 19, false);
         soonView.setLineSpacing(0, 1.05f);
         soonText.addView(soonView);
         soon.addView(soonText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        soonTotal = text(26, false);
+        soonTotal = text(Ui.COLOR ? 23 : 26, false);
         soonTotal.setPadding(dp(8), 0, 0, 0);
         soon.addView(soonTotal, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         p.addView(soon);

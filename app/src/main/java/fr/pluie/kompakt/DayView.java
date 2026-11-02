@@ -112,10 +112,12 @@ public class DayView extends View {
         if (cells == null) return;
 
         float ch = rowHeight();
-        float ts = sp(22);
-        float small = sp(18);
+        // Version couleur : textes et icônes un peu plus petits, pour un rendu plus fin.
+        float k = Ui.COLOR ? 0.9f : 1f;
+        float ts = sp(22) * k;
+        float small = sp(18) * k;
         bold.setTextSize(ts);
-        float iconSize = ch * 0.8f;
+        float iconSize = ch * 0.8f * (Ui.COLOR ? 0.86f : 1f);
 
         for (int i = 0; i < cells.size(); i++) {
             Cell cell = cells.get(i);

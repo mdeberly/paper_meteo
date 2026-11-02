@@ -57,8 +57,11 @@ public class DayListView extends View {
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, getResources().getDisplayMetrics());
     }
 
+    /** Version couleur : textes et icônes un peu plus petits, pour un rendu plus fin. */
+    private static final float SCALE = Ui.COLOR ? 0.9f : 1f;
+
     private float sp(float v) {
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, v, getResources().getDisplayMetrics());
+        return SCALE * TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, v, getResources().getDisplayMetrics());
     }
 
     private float rowH() { return dp(66); }
@@ -94,11 +97,11 @@ public class DayListView extends View {
             text.setColor(SOFT);
             c.drawText(r.date, pad, y2, text);
 
-            float size = rh * 0.74f;
+            float size = rh * 0.74f * (Ui.COLOR ? 0.86f : 1f);
             WeatherIcon.draw(c, r.icon, false, xIcon, y0 + rh / 2f, size, Ui.INK, Ui.COLOR && i % 2 == 1 ? ALT_BG : Ui.BG);
 
             // Température maximale (flèche vers le haut) et vent (flèche dans le sens du vent).
-            float ic = dp(9);
+            float ic = dp(9) * SCALE;
             text.setColor(Ui.INK);
             arrowUp(c, xTemp + ic / 2, y1 - sp(19) * 0.35f, ic);
             text.setTextSize(sp(21));
