@@ -10,8 +10,8 @@ android {
         applicationId 'fr.pluie.kompakt'
         minSdk 26
         targetSdk 35
-        versionCode 33
-        versionName '1.7'
+        versionCode 34
+        versionName '1.8'
     }
 
     // Deux variantes, à partir du même code :
