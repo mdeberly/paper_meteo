@@ -336,6 +336,8 @@ final class Weather {
     }
 
     /** « , vent de sud-ouest de 10 à 25 km/h », « , vent faible », « , vent fort d'ouest jusqu'à 55 km/h ». */
+    static final double WIND_WORTH_MENTION = 30;
+
     private static String wind(List<Hour> hs) {
         double min = Double.MAX_VALUE, max = 0, vx = 0, vy = 0;
         for (Hour x : hs) {
@@ -348,8 +350,9 @@ final class Weather {
                 vy += x.wind * Math.cos(Math.toRadians(x.windDir));
             }
         }
-        if (min > max) return "";
-        if (max < 10) return L.t("wind_light");
+        // Vent mentionné seulement à partir de 30 km/h (force 5, « vent assez fort ») : en dessous,
+        // il ne change guère la sensation du temps et alourdirait le résumé.
+        if (min > max || max < WIND_WORTH_MENTION) return "";
         if (vx == 0 && vy == 0) return "";
         double dir = Math.toDegrees(Math.atan2(vx, vy));
         String d = L.item("wind_dirs", (int) Math.round(((dir % 360) + 360) % 360 / 45.0) % 8);
