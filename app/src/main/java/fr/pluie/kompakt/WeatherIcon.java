@@ -15,11 +15,12 @@ final class WeatherIcon {
     static void draw(Canvas c, int kind, boolean night, float cx, float cy, float size, int fg, int bg) {
         if (kind == Weather.NONE) return;
         float u = size / 2f;
-        float stroke = Math.max(1.5f, size * 0.07f);
+        // E Ink : traits épais à l'encre fg. Couleur : traits fins, formes pleines aux teintes douces
+        // mais contrastées (soleil jaune d'or, nuage gris bleuté cerné plus foncé, pluie bleue).
+        float stroke = Ui.COLOR ? Math.max(1.2f, size * 0.045f) : Math.max(1.5f, size * 0.07f);
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        // E Ink : tout à l'encre fg. Couleur : une teinte par élément (soleil, lune, nuage, pluie, éclair).
-        int sunC = Ui.COLOR ? Ui.SUN : fg, moonC = Ui.COLOR ? Ui.MOON : fg;
-        int cloudC = Ui.COLOR ? Ui.CLOUD : fg, cloudFill = Ui.COLOR ? Ui.CLOUD_FILL : bg;
+        int sunC = Ui.COLOR ? 0xFFF2B200 : fg, moonC = Ui.COLOR ? Ui.MOON : fg;
+        int cloudC = Ui.COLOR ? 0xFF6F7D91 : fg, cloudFill = Ui.COLOR ? 0xFFD3DCE8 : bg;
         int rainC = Ui.COLOR ? Ui.RAIN : fg, boltC = Ui.COLOR ? Ui.BOLT : fg, snowC = Ui.COLOR ? Ui.SNOW : fg;
         p.setStrokeCap(Paint.Cap.ROUND);
         p.setStrokeJoin(Paint.Join.ROUND);

@@ -128,7 +128,7 @@ final class L {
         put("tab_summary", "Aujourd'hui", "Today", "Heute", "Hoy", "Oggi", "Hoje", "Dziś");
         put("tab_weather", "Prévisions", "Forecast", "Vorhersage", "Previsión", "Previsioni", "Previsão", "Prognoza");
         put("tab_radar", "Radar", "Radar", "Radar", "Radar", "Radar", "Radar", "Radar");
-        put("tab_eph", "Éphéméride", "Almanac", "Kalender", "Efemérides", "Effemeridi", "Efemérides", "Kalendarz");
+        put("tab_eph", "Lune", "Moon", "Mond", "Luna", "Luna", "Lua", "Księżyc");
         put("refresh", "Actualiser", "Refresh", "Aktualisieren", "Actualizar", "Aggiorna", "Atualizar", "Odśwież");
         put("settings", "Paramètres", "Settings", "Einstellungen", "Ajustes", "Impostazioni", "Definições", "Ustawienia");
         put("nd", "n/d", "n/a", "k. A.", "n/d", "n/d", "n/d", "b.d.");

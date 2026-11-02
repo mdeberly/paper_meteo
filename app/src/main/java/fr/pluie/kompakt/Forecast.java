@@ -178,11 +178,11 @@ public class Forecast {
         return LocalDateTime.now(zone).getHour();
     }
 
-    /** Hier + aujourd'hui + 7 jours = 9 jours. */
+    /** Hier + aujourd'hui + 9 jours = 11 jours. */
     public List<Day> window() {
         LocalDate today = today();
         List<Day> list = new ArrayList<>();
-        for (int k = -1; k <= 7; k++) {
+        for (int k = -1; k <= 9; k++) {
             LocalDate d = today.plusDays(k);
             Day day = byDate.get(d);
             list.add(day != null ? day : new Day(d));
@@ -190,10 +190,10 @@ public class Forecast {
         return list;
     }
 
-    /** Les mêmes 9 jours, sans données (avant le premier téléchargement). */
+    /** Les mêmes 11 jours, sans données (avant le premier téléchargement). */
     public static List<Day> emptyWindow(LocalDate today) {
         List<Day> list = new ArrayList<>();
-        for (int k = -1; k <= 7; k++) list.add(new Day(today.plusDays(k)));
+        for (int k = -1; k <= 9; k++) list.add(new Day(today.plusDays(k)));
         return list;
     }
 }

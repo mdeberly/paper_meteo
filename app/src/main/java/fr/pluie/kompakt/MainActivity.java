@@ -56,8 +56,8 @@ public class MainActivity extends Activity {
     private static final long STALE_MS = 30 * 60 * 1000L;
     private static final int REQ_LOC = 1;
 
-    /** Onglet Prévisions : de demain (index 2 de la fenêtre hier … J+7) à J+6. */
-    private static final int FIRST_FORECAST = 2, FORECAST_DAYS = 6;
+    /** Onglet Prévisions : de demain (index 2 de la fenêtre hier … J+9) à J+9. */
+    private static final int FIRST_FORECAST = 2, FORECAST_DAYS = 9;
     private static final int TAB_SUMMARY = 0, TAB_WEATHER = 1, TAB_EPH = 2, TAB_RADAR = 3;
     private static final String[] TAB_KEYS = {"tab_summary", "tab_weather", "tab_eph", "tab_radar"};
 
@@ -82,7 +82,11 @@ public class MainActivity extends Activity {
     private TextView placeView, titleView, totalView, statusView;
     private final TextView[] tabViews = new TextView[TAB_KEYS.length];
     /** Bandeau des 8 jours : fixe sur l'Éphéméride, dans la zone qui défile sur Météo. */
-    private WeekStrip weatherStrip;
+    private DayListView dayList;
+    private ScrollView listScroll;
+    private LinearLayout detailView;
+    /** Prévisions : détail d'un jour ouvert (sinon la liste des jours). */
+    private boolean weatherDetail;
     private LinearLayout weatherView;
     /** Météo : rappel fixe du jour choisi et du lieu, au-dessus de la zone qui défile. */
     private TextView weatherTitle;
@@ -328,26 +332,43 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Météo : bandeau des jours, cumuls, titres des colonnes et liste heure par heure,
-        // le tout dans une seule zone qui défile verticalement (défilement continu).
+        // Prévisions : la liste des jours (demain à J+9) ; toucher un jour ouvre son détail heure par heure.
         weatherView = new LinearLayout(this);
         weatherView.setOrientation(LinearLayout.VERTICAL);
+        dayList = new DayListView(this);
+        dayList.setOnPick(i -> {
+            selected = FIRST_FORECAST + i;
+            weatherDetail = true;
+            positionList = true;
+            render();
+        });
+        listScroll = new PageScrollView(this);
+        listScroll.setVerticalScrollBarEnabled(!Ui.COLOR);
+        listScroll.addView(dayList, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
+        llp.topMargin = dp(4);
+        weatherView.addView(listScroll, llp);
+
+        // Détail d'un jour : retour à la liste, titre, cumuls, titres des colonnes et liste heure par heure.
+        detailView = new LinearLayout(this);
+        detailView.setOrientation(LinearLayout.VERTICAL);
+        TextView back = text(16, true);
+        back.setText("‹  " + L.t("tab_weather"));
+        if (Ui.COLOR) back.setTextColor(Ui.ACCENT);
+        back.setPadding(0, dp(8), dp(24), dp(2));
+        back.setOnClickListener(v -> { weatherDetail = false; render(); });
+        detailView.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         weatherTitle = text(17, true);
         weatherTitle.setSingleLine(true);
         weatherTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
         weatherTitle.setPadding(0, dp(6), 0, dp(4));
-        weatherView.addView(weatherTitle);
+        detailView.addView(weatherTitle);
         View titleRule = new View(this);
         titleRule.setBackgroundColor(Ui.LINE);
-        weatherView.addView(titleRule, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+        detailView.addView(titleRule, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 Math.max(1, dp(Ui.LINE_DP))));
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        weatherStrip = new WeekStrip(this);
-        weatherStrip.setOnPick(i -> { selected = FIRST_FORECAST + i; render(); });
-        LinearLayout.LayoutParams wlp = stripParams();
-        wlp.height = dp(2 * 92); // demain à J+6 en 2 × 3, grandes cases avec une grande icône par jour
-        content.addView(weatherStrip, wlp);
         totalView = text(19, false);
         totalView.setPadding(0, dp(6), 0, dp(4));
         content.addView(totalView);
@@ -362,7 +383,8 @@ public class MainActivity extends Activity {
         dayView = new DayView(this, false);
         content.addView(dayView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         scroll.addView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        weatherView.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        detailView.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        weatherView.addView(detailView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         root.addView(weatherView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         ephView = buildEphemeris();
@@ -587,6 +609,10 @@ public class MainActivity extends Activity {
         if (i == tab) return;
         tab = i;
         positionList = tab == TAB_WEATHER;
+        if (tab == TAB_WEATHER) {
+            weatherDetail = false; // l'onglet s'ouvre sur la liste des jours, en haut
+            listScroll.scrollTo(0, 0);
+        }
         if (tab == TAB_RADAR) radarZoomLevel = RADAR_DEFAULT_ZOOM;
         if (tab == TAB_EPH) {
             ephDate = null; // retour sur aujourd'hui, en haut de la page
@@ -644,15 +670,6 @@ public class MainActivity extends Activity {
         selected = Math.max(0, Math.min(days.size() - 1, selected));
         Day d = days.get(selected);
 
-        String[] labels = new String[days.size()];
-        for (int i = 0; i < labels.length; i++) labels[i] = Fmt.shortLabel(i, days.get(i).date);
-
-        String[] temps = new String[days.size()];
-        for (int i = 0; i < temps.length; i++) {
-            Series t = days.get(i).temp;
-            temps[i] = t.hasAny() ? Fmt.deg(t.low()) + " / " + Fmt.deg(t.high()) : "";
-        }
-
         // Le titre n'est utile que sur le résumé : ailleurs, le bandeau montre le jour choisi.
         titleView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
         if (tab == TAB_SUMMARY) {
@@ -669,25 +686,13 @@ public class MainActivity extends Activity {
             return;
         }
 
-        String[] rainTotals = new String[days.size()];
-        for (int i = 0; i < rainTotals.length; i++) {
-            Day x = days.get(i);
-            // Neige : hauteur tombée en cm ; sinon cumul de pluie en mm.
-            rainTotals[i] = !x.rain.hasAny() ? L.t("nd")
-                    : x.snow.total() >= 0.1 ? Fmt.total(x.snow.total()) + " cm"
-                    : Fmt.total(x.rain.total()) + " mm";
+        listScroll.setVisibility(weatherDetail ? View.GONE : View.VISIBLE);
+        detailView.setVisibility(weatherDetail ? View.VISIBLE : View.GONE);
+        if (!weatherDetail) {
+            dayList.setRows(forecastRows(zone));
+            updateStatus("");
+            return;
         }
-        int[] dayIcons = new int[days.size()];
-        for (int i = 0; i < dayIcons.length; i++) {
-            dayIcons[i] = forecast == null ? Weather.NONE
-                    : Weather.dayKind(forecast, zone, lat(), lon(), days.get(i).date);
-        }
-        // Prévisions : de demain (index 2 de la fenêtre) à J+6.
-        int n = Math.min(FORECAST_DAYS, days.size() - FIRST_FORECAST);
-        weatherStrip.setCells(java.util.Arrays.copyOfRange(labels, FIRST_FORECAST, FIRST_FORECAST + n),
-                java.util.Arrays.copyOfRange(rainTotals, FIRST_FORECAST, FIRST_FORECAST + n), null,
-                java.util.Arrays.copyOfRange(temps, FIRST_FORECAST, FIRST_FORECAST + n),
-                java.util.Arrays.copyOfRange(dayIcons, FIRST_FORECAST, FIRST_FORECAST + n), false, selected - FIRST_FORECAST);
 
         weatherTitle.setText(Fmt.title(selected, d.date) + "  ·  " + prefs.getString("name", DEF_NAME));
         if (forecast == null) {
@@ -697,6 +702,42 @@ public class MainActivity extends Activity {
             renderWeather(d, zone);
         }
         updateStatus(L.t("legend") + " · ");
+    }
+
+    /** Lignes de la liste des Prévisions, de demain à J+9. */
+    private List<DayListView.Row> forecastRows(ZoneId zone) {
+        List<DayListView.Row> rows = new ArrayList<>();
+        int end = Math.min(days.size(), FIRST_FORECAST + FORECAST_DAYS);
+        for (int i = FIRST_FORECAST; i < end; i++) {
+            Day x = days.get(i);
+            DayListView.Row r = new DayListView.Row();
+            r.day = x.date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", L.locale()));
+            if (!r.day.endsWith(".") && L.lang() == L.FR) r.day += ".";
+            r.date = x.date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM"));
+            java.time.DayOfWeek dw = x.date.getDayOfWeek();
+            r.weekend = dw == java.time.DayOfWeek.SATURDAY || dw == java.time.DayOfWeek.SUNDAY;
+            r.tmax = x.temp.hasAny() ? Fmt.deg(x.temp.high()) : "–";
+            // Vent : le plus fort de la journée, direction dominante (moyenne pondérée par la vitesse).
+            double wmax = -1, wx = 0, wy = 0;
+            for (int h = 0; h < 24; h++) {
+                if (!x.wind.has[h]) continue;
+                double v = x.wind.v[h];
+                wmax = Math.max(wmax, v);
+                if (x.windDir.has[h]) {
+                    wx += v * Math.sin(Math.toRadians(x.windDir.v[h]));
+                    wy += v * Math.cos(Math.toRadians(x.windDir.v[h]));
+                }
+            }
+            r.wind = wmax < 0 ? "" : String.valueOf(Math.round(wmax));
+            if (wx != 0 || wy != 0) r.windDir = (Math.toDegrees(Math.atan2(wx, wy)) + 360) % 360;
+            r.sun = x.sun.hasAny() ? Fmt.duration(x.sun.total()) : L.t("nd");
+            r.rain = !x.rain.hasAny() ? L.t("nd")
+                    : x.snow.total() >= 0.1 ? Fmt.total(x.snow.total()) + "\u00a0cm"
+                    : Fmt.total(x.rain.total()) + "\u00a0mm";
+            r.icon = forecast == null ? Weather.NONE : Weather.dayKind(forecast, zone, lat(), lon(), x.date);
+            rows.add(r);
+        }
+        return rows;
     }
 
     private void updateStatus(String legend) {
@@ -918,7 +959,7 @@ public class MainActivity extends Activity {
                         + "&current=temperature_2m,apparent_temperature,weather_code,cloud_cover,precipitation,"
                         + "wind_speed_10m,wind_direction_10m,is_day,visibility,snowfall,relative_humidity_2m,dew_point_2m,"
                         + "cloud_cover_low,wind_gusts_10m"
-                        + "&past_days=1&forecast_days=9&timezone=auto",
+                        + "&past_days=1&forecast_days=11&timezone=auto",
                 lat(), lon());
         io.execute(() -> {
             try {

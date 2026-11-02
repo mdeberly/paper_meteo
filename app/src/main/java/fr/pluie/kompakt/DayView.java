@@ -58,7 +58,7 @@ public class DayView extends View {
 
     /** Hauteur d'une ligne, en pixels. */
     public int rowHeight() {
-        return px(header ? 54 : 60);
+        return px(header ? 66 : 60);
     }
 
     private int px(float dp) {
@@ -85,9 +85,9 @@ public class DayView extends View {
         if (header) {
             // Petite icône au-dessus de chaque colonne, puis le titre en gras et l'unité.
             float h = getHeight();
-            float ic = h * 0.3f, iy = h * 0.2f, y1 = h * 0.6f, y2 = h * 0.88f;
-            bold.setTextSize(sp(14));
-            text.setTextSize(sp(12));
+            float ic = h * 0.3f, iy = h * 0.21f, y1 = h * 0.62f, y2 = h * 0.88f;
+            bold.setTextSize(sp(15));
+            text.setTextSize(sp(13));
             // Ligne des titres sur fond sombre : noir en E Ink, brun très foncé en couleur.
             c.drawColor(HEAD_BG);
             text.setColor(HEAD_UNIT);
