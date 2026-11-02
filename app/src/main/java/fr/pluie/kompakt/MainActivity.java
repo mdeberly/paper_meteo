@@ -394,29 +394,29 @@ public class MainActivity extends Activity {
     private ScrollView buildEphemeris() {
         LinearLayout p = new LinearLayout(this);
         p.setOrientation(LinearLayout.VERTICAL);
-        p.setPadding(0, dp(6), 0, 0);
+        p.setPadding(0, dp(4), 0, 0);
 
-        ephTitle = text(19, true);
-        p.addView(ephTitle);
+        // Lune du jour, compacte : avec le calendrier, elle tient sur un écran du Kompakt.
         LinearLayout moon = new LinearLayout(this);
         moon.setOrientation(LinearLayout.HORIZONTAL);
+        moon.setGravity(Gravity.CENTER_VERTICAL);
         moonView = new MoonView(this);
-        moon.addView(moonView, new LinearLayout.LayoutParams(dp(116), dp(116)));
+        moon.addView(moonView, new LinearLayout.LayoutParams(dp(68), dp(68)));
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
         info.setPadding(dp(12), 0, 0, 0);
-        phaseView = text(19, true);
-        moonInfoView = text(15, false);
-        nextPhasesView = text(14, false);
-        nextPhasesView.setPadding(0, dp(4), 0, 0);
+        ephTitle = text(14, false);
+        phaseView = text(18, true);
+        moonInfoView = text(14, false);
+        info.addView(ephTitle);
         info.addView(phaseView);
         info.addView(moonInfoView);
-        info.addView(nextPhasesView);
         moon.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        mlp.topMargin = dp(6);
-        p.addView(moon, mlp);
-        p.addView(thickRule());
+        p.addView(moon, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        View r1 = thickRule();
+        ((LinearLayout.LayoutParams) r1.getLayoutParams()).topMargin = dp(5);
+        ((LinearLayout.LayoutParams) r1.getLayoutParams()).bottomMargin = dp(2);
+        p.addView(r1);
 
         moonCalendar = new MoonCalendarView(this);
         moonCalendar.setOnPick(d -> { ephDate = d; render(); });
@@ -432,6 +432,13 @@ public class MainActivity extends Activity {
         p.addView(sun);
         dayLengthView = text(15, false);
         p.addView(dayLengthView);
+        p.addView(thickRule());
+
+        TextView np = text(13, false);
+        np.setText(L.t("next_phases"));
+        p.addView(np);
+        nextPhasesView = text(15, false);
+        p.addView(nextPhasesView);
         p.addView(thickRule());
 
         TextView l = text(13, false);
@@ -829,7 +836,7 @@ public class MainActivity extends Activity {
     private void renderEphemeris(LocalDate date, LocalDate today, ZoneId zone) {
         boolean south = lat() < 0;
         ephTitle.setText(Fmt.cap(date.format(java.time.format.DateTimeFormatter.ofPattern(
-                L.lang() == L.EN ? "EEEE, MMMM d, yyyy" : "EEEE d MMMM yyyy", L.locale()))));
+                L.lang() == L.EN ? "EEEE, MMMM d" : "EEEE d MMMM", L.locale()))));
         moonCalendar.set(today, date, zone, south);
 
         // Fête du jour selon le pays choisi ; plusieurs prénoms : texte plus petit.
@@ -860,8 +867,8 @@ public class MainActivity extends Activity {
         moonView.setPhase(info.elong, south);
         phaseView.setText(event != null ? MoonPhase.mainName(event.type) : MoonPhase.name(info.elong));
         String moonInfo = L.f("moon_lit", Math.round(info.illum * 100));
-        if (event != null) moonInfo = L.f("moon_exact", Fmt.clock(event.t.atZone(zone))) + "\n" + moonInfo;
-        else moonInfo += "\n" + L.f("moon_age", L.days(Math.round(info.age)));
+        if (event != null) moonInfo = L.f("moon_exact", Fmt.clock(event.t.atZone(zone))) + " · " + moonInfo;
+        else moonInfo += " · " + L.f("moon_age", L.days(Math.round(info.age)));
         moonInfoView.setText(moonInfo);
 
         StringBuilder next = new StringBuilder();

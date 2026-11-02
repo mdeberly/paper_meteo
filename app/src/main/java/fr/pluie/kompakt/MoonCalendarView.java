@@ -70,10 +70,10 @@ public class MoonCalendarView extends View {
     }
 
     // Hauteurs : en-tête du mois, initiales, une ligne par semaine, légende.
-    private float headH() { return dp(44); }
-    private float namesH() { return dp(26); }
-    private float rowH() { return dp(60); }
-    private float legendH() { return dp(36); }
+    private float headH() { return dp(30); }
+    private float namesH() { return dp(18); }
+    private float rowH() { return dp(40); }
+    private float legendH() { return dp(26); }
 
     private DayOfWeek firstDay() {
         // Semaine du dimanche en anglais, du lundi dans les autres langues de l'appli.
@@ -101,15 +101,15 @@ public class MoonCalendarView extends View {
 
         // Mois et flèches.
         text.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
-        text.setTextSize(sp(21));
+        text.setTextSize(sp(18));
         String title = Fmt.cap(month.atDay(1).format(DateTimeFormatter.ofPattern("LLLL yyyy", L.locale())));
         c.drawText(title, w / 2, headH() * 0.66f, text);
-        text.setTextSize(sp(26));
+        text.setTextSize(sp(24));
         if (month.isAfter(first())) c.drawText("‹", cw / 2, headH() * 0.68f, text);
         if (month.isBefore(last())) c.drawText("›", w - cw / 2, headH() * 0.68f, text);
 
         // Initiales des jours.
-        text.setTextSize(sp(16));
+        text.setTextSize(sp(13));
         for (int i = 0; i < 7; i++) {
             DayOfWeek d = firstDay().plus(i);
             String n = d.getDisplayName(TextStyle.NARROW_STANDALONE, L.locale()).toUpperCase(L.locale());
@@ -117,7 +117,7 @@ public class MoonCalendarView extends View {
         }
 
         // Jours.
-        float top = headH() + namesH(), rh = rowH(), r = Math.min(cw, rh) * 0.3f;
+        float top = headH() + namesH(), rh = rowH(), r = Math.min(cw, rh) * 0.27f;
         float stroke = Math.max(1, dp(1.2f));
         for (int day = 1; day <= month.lengthOfMonth(); day++) {
             LocalDate d = month.atDay(day);
@@ -125,10 +125,10 @@ public class MoonCalendarView extends View {
             float x = cw * (k % 7) + cw / 2, y0 = top + rh * (k / 7);
             boolean isToday = d.equals(today);
             text.setTypeface(Typeface.create("sans-serif", isToday ? Typeface.BOLD : Typeface.NORMAL));
-            text.setTextSize(sp(isToday ? 17 : 16));
-            c.drawText(String.valueOf(day), x, y0 + rh * 0.3f, text);
+            text.setTextSize(sp(isToday ? 14 : 13));
+            c.drawText(String.valueOf(day), x, y0 + rh * 0.34f, text);
             double elong = MoonPhase.at(d.atTime(22, 0).atZone(zone).toInstant()).elong;
-            MoonView.draw(c, x, y0 + rh * 0.68f, r, elong, south, Ui.MOON_EDGE, stroke);
+            MoonView.draw(c, x, y0 + rh * 0.7f, r, elong, south, Ui.MOON_EDGE, stroke);
             if (d.equals(selected)) {
                 line.setStrokeWidth(dp(2));
                 c.drawRect(x - cw / 2 + dp(2), y0 + dp(2), x + cw / 2 - dp(2), y0 + rh - dp(1), line);
@@ -140,13 +140,13 @@ public class MoonCalendarView extends View {
         String[] names = L.t("moon_short").split("\\|");
         double[] el = {0, 90, 180, 270};
         text.setTypeface(Typeface.DEFAULT);
-        text.setTextSize(sp(14));
+        text.setTextSize(sp(13));
         text.setTextAlign(Paint.Align.LEFT);
-        float lr = dp(8), gap = dp(5), total = 0;
+        float lr = dp(7), gap = dp(5), total = 0;
         for (String n : names) total += lr * 2 + gap + text.measureText(n) + dp(14);
         if (total > w) {
             // Légende trop large : texte réduit pour tenir sur la ligne.
-            text.setTextSize(sp(14) * (w - names.length * (lr * 2 + gap + dp(14))) / (total - names.length * (lr * 2 + gap + dp(14))));
+            text.setTextSize(sp(13) * (w - names.length * (lr * 2 + gap + dp(14))) / (total - names.length * (lr * 2 + gap + dp(14))));
             total = 0;
             for (String n : names) total += lr * 2 + gap + text.measureText(n) + dp(14);
         }
@@ -154,7 +154,7 @@ public class MoonCalendarView extends View {
         for (int i = 0; i < 4 && i < names.length; i++) {
             MoonView.draw(c, x + lr, ly, lr, el[i], south, Ui.MOON_EDGE, stroke);
             x += lr * 2 + gap;
-            c.drawText(names[i], x, ly + sp(5), text);
+            c.drawText(names[i], x, ly + sp(4.5f), text);
             x += text.measureText(names[i]) + dp(14);
         }
         text.setTextAlign(Paint.Align.CENTER);
