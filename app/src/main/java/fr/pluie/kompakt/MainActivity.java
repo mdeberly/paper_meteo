@@ -655,7 +655,7 @@ public class MainActivity extends Activity {
         } else {
             List<int[]> slots = new ArrayList<>();
             for (int h = now.getHour(); h < 24; h++) slots.add(new int[]{h, h + 1});
-            todayView.setCells(cells(d, zone, slots, now.getHour()));
+            todayView.setCells(cells(d, zone, slots, -1)); // pas de ligne inversée
         }
     }
 

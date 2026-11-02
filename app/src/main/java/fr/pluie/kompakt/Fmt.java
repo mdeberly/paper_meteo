@@ -85,7 +85,8 @@ final class Fmt {
 
     /** index 0 = hier, 1 = aujourd'hui… */
     static String title(int index, LocalDate d) {
-        String date = d.format(DateTimeFormatter.ofPattern(L.lang() == L.EN ? "MMMM d" : "d MMMM", L.locale()));
+        // Avec le nom du jour : « Aujourd'hui · lundi 2 novembre ».
+        String date = d.format(DateTimeFormatter.ofPattern(L.lang() == L.EN ? "EEEE, MMMM d" : "EEEE d MMMM", L.locale()));
         if (index <= 2) return L.item("days_long", index) + " · " + date;
         return cap(d.format(DateTimeFormatter.ofPattern(L.lang() == L.EN ? "EEEE, MMMM d" : "EEEE d MMMM", L.locale())));
     }

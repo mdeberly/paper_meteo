@@ -88,8 +88,10 @@ public class DayView extends View {
             float ic = h * 0.3f, iy = h * 0.2f, y1 = h * 0.6f, y2 = h * 0.88f;
             bold.setTextSize(sp(14));
             text.setTextSize(sp(12));
-            text.setColor(Ui.MUTED);
-            bold.setColor(Ui.INK);
+            // Ligne des titres sur fond sombre : noir en E Ink, brun très foncé en couleur.
+            c.drawColor(HEAD_BG);
+            text.setColor(HEAD_UNIT);
+            bold.setColor(HEAD_FG);
             bold.setTextAlign(Paint.Align.RIGHT);
             text.setTextAlign(Paint.Align.RIGHT);
             title(c, SUN_ICON, L.t("col_sun"), "min", w * SUN, iy, ic, y1, y2);
@@ -103,8 +105,8 @@ public class DayView extends View {
             columnIcon(c, CLOCK_ICON, pad + bold.measureText(hourName) / 2f, iy, ic);
             c.drawText(hourName, pad, y1, bold);
             bold.setTextSize(sp(22));
-            ink.setColor(Ui.LINE);
-            c.drawRect(0, getHeight() - px(Ui.LINE_DP), w, getHeight(), ink);
+            bold.setColor(Ui.INK);
+            text.setColor(Ui.INK);
             return;
         }
         if (cells == null) return;
@@ -174,6 +176,11 @@ public class DayView extends View {
         }
     }
 
+    /** Couleurs de la ligne des titres de colonnes. */
+    private static final int HEAD_BG = Ui.COLOR ? 0xFF3A2C24 : 0xFF000000;
+    private static final int HEAD_FG = 0xFFFFFFFF;
+    private static final int HEAD_UNIT = Ui.COLOR ? 0xFFE0D2C4 : 0xFFFFFFFF;
+
     private static final int CLOCK_ICON = 0, SUN_ICON = 1, DROP_ICON = 2, THERMO_ICON = 3, WIND_ICON = 4;
 
     /** Titre de colonne : icône centrée au-dessus du nom (en gras), unité en dessous. Alignement selon les pinceaux. */
@@ -194,14 +201,14 @@ public class DayView extends View {
         p.setStrokeWidth(sw);
         switch (icon) {
             case CLOCK_ICON:
-                p.setColor(Ui.INK);
+                p.setColor(HEAD_FG);
                 p.setStyle(Paint.Style.STROKE);
                 c.drawCircle(cx, cy, r * 0.88f, p);
                 c.drawLine(cx, cy, cx, cy - r * 0.55f, p);
                 c.drawLine(cx, cy, cx + r * 0.42f, cy + r * 0.12f, p);
                 break;
             case SUN_ICON:
-                p.setColor(Ui.COLOR ? Ui.SUN : Ui.INK);
+                p.setColor(Ui.COLOR ? Ui.SUN : HEAD_FG);
                 p.setStyle(Paint.Style.FILL);
                 c.drawCircle(cx, cy, r * 0.42f, p);
                 p.setStyle(Paint.Style.STROKE);
@@ -212,7 +219,7 @@ public class DayView extends View {
                 }
                 break;
             case DROP_ICON: {
-                p.setColor(Ui.COLOR ? Ui.RAIN : Ui.INK);
+                p.setColor(Ui.COLOR ? 0xFF6FA8E8 : HEAD_FG);
                 p.setStyle(Paint.Style.FILL);
                 float br = r * 0.58f, by = cy + r * 0.32f;
                 Path d = new Path();
@@ -225,7 +232,7 @@ public class DayView extends View {
                 break;
             }
             case THERMO_ICON: {
-                p.setColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);
+                p.setColor(Ui.COLOR ? 0xFFF0905E : HEAD_FG);
                 float tw = r * 0.26f, br = r * 0.36f, by = cy + r * 0.62f;
                 p.setStyle(Paint.Style.STROKE);
                 c.drawRoundRect(cx - tw, cy - r, cx + tw, by, tw, tw, p);
@@ -236,7 +243,7 @@ public class DayView extends View {
             }
             default: {
                 // Vent : trois traits horizontaux, deux terminés par une boucle.
-                p.setColor(Ui.COLOR ? Ui.CLOUD : Ui.INK);
+                p.setColor(Ui.COLOR ? 0xFFC8BDB4 : HEAD_FG);
                 p.setStyle(Paint.Style.STROKE);
                 Path wp = new Path();
                 wp.moveTo(cx - r, cy - r * 0.4f);
