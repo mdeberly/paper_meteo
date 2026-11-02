@@ -82,14 +82,18 @@ public class MainActivity extends Activity {
     private TextView placeView, titleView, totalView, statusView;
     private final TextView[] tabViews = new TextView[TAB_KEYS.length];
     /** Bandeau des 8 jours : fixe sur l'Éphéméride, dans la zone qui défile sur Météo. */
-    private WeekStrip strip, weatherStrip;
+    private WeekStrip weatherStrip;
     private LinearLayout weatherView;
     /** Météo : rappel fixe du jour choisi et du lieu, au-dessus de la zone qui défile. */
     private TextView weatherTitle;
     private ScrollView scroll;
     private DayView dayView;
 
-    private LinearLayout ephView;
+    private ScrollView ephView;
+    private TextView ephTitle;
+    private MoonCalendarView moonCalendar;
+    /** Jour affiché dans l'Éphéméride (aujourd'hui à chaque ouverture de l'onglet). */
+    private LocalDate ephDate;
     private TextView saintView, feastView, riseView, setView, dayLengthView, phaseView, moonInfoView, nextPhasesView;
     private MoonView moonView;
 
@@ -308,9 +312,6 @@ public class MainActivity extends Activity {
         root.addView(tabs, tlp);
 
         // Les 8 jours (Éphéméride).
-        strip = new WeekStrip(this);
-        strip.setOnPick(i -> { selected = i; render(); });
-        root.addView(strip, stripParams());
 
         // Titre du jour (Résumé).
         titleView = text(19, true);
@@ -326,7 +327,6 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
-        View.OnTouchListener swipeListener = (v, e) -> swipe.onTouchEvent(e);
 
         // Météo : bandeau des jours, cumuls, titres des colonnes et liste heure par heure,
         // le tout dans une seule zone qui défile verticalement (défilement continu).
@@ -366,7 +366,6 @@ public class MainActivity extends Activity {
         root.addView(weatherView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         ephView = buildEphemeris();
-        ephView.setOnTouchListener(swipeListener);
         root.addView(ephView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         summaryView = buildSummary();
@@ -388,35 +387,21 @@ public class MainActivity extends Activity {
         return lp;
     }
 
-    private LinearLayout buildEphemeris() {
+    /**
+     * Éphéméride : la Lune du jour choisi, le calendrier lunaire (janvier de l'année en cours à décembre
+     * de la suivante ; toucher un jour le choisit), le soleil, puis la fête du jour. Défile verticalement.
+     */
+    private ScrollView buildEphemeris() {
         LinearLayout p = new LinearLayout(this);
         p.setOrientation(LinearLayout.VERTICAL);
         p.setPadding(0, dp(6), 0, 0);
 
-        TextView l = text(13, false);
-        l.setText(L.t("nameday") + " · " + new Locale("", Saints.country).getDisplayCountry(L.locale()));
-        p.addView(l);
-        saintView = text(24, true);
-        p.addView(saintView);
-        feastView = text(16, false);
-        p.addView(feastView);
-        p.addView(rule());
-
-        LinearLayout sun = new LinearLayout(this);
-        sun.setOrientation(LinearLayout.HORIZONTAL);
-        riseView = text(22, true);
-        setView = text(22, true);
-        sun.addView(labelled(L.t("sunrise"), riseView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        sun.addView(labelled(L.t("sunset"), setView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        p.addView(sun);
-        dayLengthView = text(15, false);
-        p.addView(dayLengthView);
-        p.addView(rule());
-
+        ephTitle = text(19, true);
+        p.addView(ephTitle);
         LinearLayout moon = new LinearLayout(this);
         moon.setOrientation(LinearLayout.HORIZONTAL);
         moonView = new MoonView(this);
-        moon.addView(moonView, new LinearLayout.LayoutParams(dp(116), ViewGroup.LayoutParams.MATCH_PARENT));
+        moon.addView(moonView, new LinearLayout.LayoutParams(dp(116), dp(116)));
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
         info.setPadding(dp(12), 0, 0, 0);
@@ -428,8 +413,40 @@ public class MainActivity extends Activity {
         info.addView(moonInfoView);
         info.addView(nextPhasesView);
         moon.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        p.addView(moon, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
-        return p;
+        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        mlp.topMargin = dp(6);
+        p.addView(moon, mlp);
+        p.addView(thickRule());
+
+        moonCalendar = new MoonCalendarView(this);
+        moonCalendar.setOnPick(d -> { ephDate = d; render(); });
+        p.addView(moonCalendar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        p.addView(thickRule());
+
+        LinearLayout sun = new LinearLayout(this);
+        sun.setOrientation(LinearLayout.HORIZONTAL);
+        riseView = text(22, true);
+        setView = text(22, true);
+        sun.addView(labelled(L.t("sunrise"), riseView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        sun.addView(labelled(L.t("sunset"), setView), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        p.addView(sun);
+        dayLengthView = text(15, false);
+        p.addView(dayLengthView);
+        p.addView(thickRule());
+
+        TextView l = text(13, false);
+        l.setText(L.t("nameday") + " · " + new Locale("", Saints.country).getDisplayCountry(L.locale()));
+        p.addView(l);
+        saintView = text(24, true);
+        p.addView(saintView);
+        feastView = text(16, false);
+        feastView.setPadding(0, 0, 0, dp(12));
+        p.addView(feastView);
+
+        ScrollView sv = new PageScrollView(this);
+        sv.setVerticalScrollBarEnabled(!Ui.COLOR);
+        sv.addView(p, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return sv;
     }
 
     /** Trait de séparation épais de l'onglet Aujourd'hui. */
@@ -546,6 +563,10 @@ public class MainActivity extends Activity {
         tab = i;
         positionList = tab == TAB_WEATHER;
         if (tab == TAB_RADAR) radarZoomLevel = RADAR_DEFAULT_ZOOM;
+        if (tab == TAB_EPH) {
+            ephDate = null; // retour sur aujourd'hui, en haut de la page
+            ephView.scrollTo(0, 0);
+        }
         render();
     }
 
@@ -581,7 +602,6 @@ public class MainActivity extends Activity {
         ephView.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
         summaryView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
         if (tab == TAB_SUMMARY) summaryView.scrollTo(0, 0);
-        strip.setVisibility(tab == TAB_EPH ? View.VISIBLE : View.GONE);
         radarPage.setVisibility(tab == TAB_RADAR ? View.VISIBLE : View.GONE);
         if (tab != TAB_RADAR) stopPlay();
         if (tab == TAB_RADAR) {
@@ -618,7 +638,8 @@ public class MainActivity extends Activity {
         }
 
         if (tab == TAB_EPH) {
-            renderEphemeris(d, today, zone, labels, temps);
+            if (ephDate == null) ephDate = today;
+            renderEphemeris(ephDate, today, zone);
             statusView.setText(L.t("eph_status"));
             return;
         }
@@ -805,29 +826,25 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void renderEphemeris(Day d, LocalDate today, ZoneId zone, String[] labels, String[] temps) {
+    private void renderEphemeris(LocalDate date, LocalDate today, ZoneId zone) {
         boolean south = lat() < 0;
-
-        // Bandeau : la lune de chaque jour, vers 22 h.
-        double[] moons = new double[days.size()];
-        for (int i = 0; i < moons.length; i++) {
-            moons[i] = MoonPhase.at(days.get(i).date.atTime(22, 0).atZone(zone).toInstant()).elong;
-        }
-        strip.setCells(labels, null, moons, temps, south, selected);
+        ephTitle.setText(Fmt.cap(date.format(java.time.format.DateTimeFormatter.ofPattern(
+                L.lang() == L.EN ? "EEEE, MMMM d, yyyy" : "EEEE d MMMM yyyy", L.locale()))));
+        moonCalendar.set(today, date, zone, south);
 
         // Fête du jour selon le pays choisi ; plusieurs prénoms : texte plus petit.
-        String names = Saints.nameDay(d.date);
+        String names = Saints.nameDay(date);
         saintView.setTextSize(TypedValue.COMPLEX_UNIT_SP, names.length() > 22 ? 18 : 24);
         saintView.setText(names);
-        String feast = Saints.feast(d.date);
+        String feast = Saints.feast(date);
         feastView.setText(feast == null ? "" : feast);
         feastView.setVisibility(feast == null ? View.GONE : View.VISIBLE);
 
-        Sun sun = Sun.of(d.date, lat(), lon(), zone);
+        Sun sun = Sun.of(date, lat(), lon(), zone);
         if (sun.state == Sun.NORMAL) {
             riseView.setText(Fmt.clock(sun.rise));
             setView.setText(Fmt.clock(sun.set));
-            long diff = Math.round(sun.dayMinutes()) - Math.round(Sun.of(d.date.minusDays(1), lat(), lon(), zone).dayMinutes());
+            long diff = Math.round(sun.dayMinutes()) - Math.round(Sun.of(date.minusDays(1), lat(), lon(), zone).dayMinutes());
             String sign = diff > 0 ? "+" : diff < 0 ? "−" : "±";
             dayLengthView.setText(L.f("day_length", Fmt.duration(sun.dayMinutes()), sign + Math.abs(diff)));
         } else {
@@ -837,9 +854,9 @@ public class MainActivity extends Activity {
         }
 
         // Lune : maintenant pour aujourd'hui, 22 h pour les autres jours.
-        Instant ref = d.date.equals(today) ? Instant.now() : d.date.atTime(22, 0).atZone(zone).toInstant();
+        Instant ref = date.equals(today) ? Instant.now() : date.atTime(22, 0).atZone(zone).toInstant();
         MoonPhase.Info info = MoonPhase.at(ref);
-        MoonPhase.Event event = MoonPhase.onDay(d.date, zone);
+        MoonPhase.Event event = MoonPhase.onDay(date, zone);
         moonView.setPhase(info.elong, south);
         phaseView.setText(event != null ? MoonPhase.mainName(event.type) : MoonPhase.name(info.elong));
         String moonInfo = L.f("moon_lit", Math.round(info.illum * 100));
@@ -848,7 +865,7 @@ public class MainActivity extends Activity {
         moonInfoView.setText(moonInfo);
 
         StringBuilder next = new StringBuilder();
-        Instant from = d.date.plusDays(1).atStartOfDay(zone).toInstant();
+        Instant from = date.plusDays(1).atStartOfDay(zone).toInstant();
         for (MoonPhase.Event e : MoonPhase.after(from, 3)) {
             if (next.length() > 0) next.append('\n');
             next.append(MoonPhase.mainName(e.type)).append(L.colon()).append(Fmt.weekdayShort(e.t.atZone(zone).toLocalDate()));

@@ -224,6 +224,10 @@ final class L {
         put("moon_exact", "Exacte à {0}", "Exact at {0}", "Genau um {0}", "Exacta a las {0}", "Esatta alle {0}",
                 "Exata às {0}", "Dokładnie o {0}");
         put("moon_age", "Âge : {0}", "Age: {0}", "Alter: {0}", "Edad: {0}", "Età: {0}", "Idade: {0}", "Wiek: {0}");
+        put("moon_short", "Nouvelle|1er quart.|Pleine|Dern. quart.", "New|1st Qtr|Full|Last Qtr",
+                "Neumond|1. Viertel|Voll|Letztes V.", "Nueva|C. creciente|Llena|C. menguante",
+                "Nuova|Primo q.|Piena|Ultimo q.", "Nova|Q. crescente|Cheia|Q. minguante",
+                "Nów|I kwadra|Pełnia|III kwadra");
         put("moon_main", "Nouvelle lune|Premier quartier|Pleine lune|Dernier quartier",
                 "New moon|First quarter|Full moon|Last quarter",
                 "Neumond|Erstes Viertel|Vollmond|Letztes Viertel",
