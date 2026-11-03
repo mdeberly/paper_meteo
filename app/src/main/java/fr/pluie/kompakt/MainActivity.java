@@ -198,6 +198,18 @@ public class MainActivity extends Activity {
         if (prefs.getString("name", DEF_NAME).startsWith("GPS ")) resolvePlaceName(lat(), lon());
     }
 
+    /** Touche Retour : depuis le détail d'un jour, retour à la liste des Prévisions. */
+    @Override
+    @SuppressWarnings("deprecation")
+    public void onBackPressed() {
+        if (tab == TAB_WEATHER && weatherDetail) {
+            weatherDetail = false;
+            render();
+            return;
+        }
+        super.onBackPressed();
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -367,13 +379,12 @@ public class MainActivity extends Activity {
         titleRule.setBackgroundColor(Ui.LINE);
         detailView.addView(titleRule, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 Math.max(1, dp(Ui.LINE_DP))));
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
+        // Cumuls et titres des colonnes fixes ; seules les heures défilent.
         totalView = text(19, false);
         totalView.setPadding(0, dp(6), 0, dp(4));
-        content.addView(totalView);
+        detailView.addView(totalView);
         DayView header = new DayView(this, true);
-        content.addView(header, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, header.rowHeight()));
+        detailView.addView(header, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, header.rowHeight()));
         scroll = new PageScrollView(this);
         scroll.setVerticalScrollBarEnabled(true);
         scroll.setOnTouchListener((v, e) -> {
@@ -381,8 +392,7 @@ public class MainActivity extends Activity {
             return false; // le ScrollView garde la main pour défiler
         });
         dayView = new DayView(this, false);
-        content.addView(dayView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        scroll.addView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        scroll.addView(dayView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         detailView.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         weatherView.addView(detailView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         root.addView(weatherView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
@@ -626,7 +636,11 @@ public class MainActivity extends Activity {
         int lo = tab == TAB_WEATHER ? FIRST_FORECAST : 0;
         int hi = tab == TAB_WEATHER ? Math.min(days.size(), FIRST_FORECAST + FORECAST_DAYS) - 1 : days.size() - 1;
         int n = Math.max(lo, Math.min(hi, selected + delta));
-        if (n != selected) { selected = n; render(); }
+        if (n != selected) {
+            selected = n;
+            positionList = tab == TAB_WEATHER; // nouveau jour : retour sur 7 h
+            render();
+        }
     }
 
     private ZoneId zone() {
@@ -796,11 +810,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Créneaux de la liste : la nuit regroupée par 3 heures, puis heure par heure. */
-    private static final int[][] SLOTS = {
-            {0, 3}, {3, 6}, {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 12}, {12, 13}, {13, 14},
-            {14, 15}, {15, 16}, {16, 17}, {17, 18}, {18, 19}, {19, 20}, {20, 21}, {21, 22}, {22, 23}, {23, 24}};
-
     /** Aujourd'hui : lever et coucher du soleil, températures mini / maxi avec leurs heures et les écarts. */
     private void renderTodayRows(ZoneId zone, LocalDate today) {
         Sun sun = Sun.of(today, lat(), lon(), zone);
@@ -894,13 +903,14 @@ public class MainActivity extends Activity {
         }
 
         int hour = selected == 1 ? forecast.currentHour() : -1;
-        dayView.setCells(cells(d, zone, java.util.Arrays.asList(SLOTS), hour));
-
-        // En arrivant sur l'onglet, on part tout en haut (bandeau des jours visible).
-        // En changeant de jour, la position ne bouge pas : le bandeau touché reste sous le doigt.
+        // Heure par heure dès minuit ; à l'ouverture d'un jour, la liste démarre sur la ligne de 7 h
+        // (on remonte pour voir la nuit).
+        List<int[]> slots = new ArrayList<>();
+        for (int h = 0; h < 24; h++) slots.add(new int[]{h, h + 1});
+        dayView.setCells(cells(d, zone, slots, hour));
         if (positionList) {
             positionList = false;
-            scroll.post(() -> scroll.scrollTo(0, 0));
+            scroll.post(() -> scroll.scrollTo(0, 7 * dayView.rowHeight()));
         }
     }
 

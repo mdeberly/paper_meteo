@@ -6,12 +6,13 @@ import android.view.ViewConfiguration;
 import android.widget.ScrollView;
 
 /**
- * Zone qui défile verticalement. Version E Ink : page par page, sans animation (un glissement vers
- * le haut avance d'un écran, vers le bas recule d'un écran) pour éviter les rafraîchissements
- * successifs. Version couleur : défilement continu habituel.
+ * Zone qui défile verticalement. Peut défiler page par page, sans animation (un glissement vers
+ * le haut avance d'un écran, vers le bas recule d'un écran) ; réglage actuel : défilement fluide
+ * habituel dans les deux versions (voir {@code paged}).
  */
 public class PageScrollView extends ScrollView {
-    private final boolean paged = !Ui.COLOR;
+    /** Défilement page par page désactivé : défilement fluide dans les deux versions. */
+    private final boolean paged = false;
     private final int slop;
     private float downX, downY;
 
