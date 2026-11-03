@@ -27,6 +27,8 @@ public class DayView extends View {
         double windDir = Double.NaN;
         int icon = Weather.NONE;
         boolean iconNight, highlight;
+        /** Premier créneau d'un nouveau jour : trait épais au-dessus et nom du jour en petit (ou null). */
+        String dayMark;
     }
 
     // Colonnes, en fraction de la largeur : centre de l'icône, bord droit des valeurs (alignées à droite),
@@ -139,6 +141,15 @@ public class DayView extends View {
             if (lw > room) text.setTextSize(ts * room / lw);
             text.setTextAlign(Paint.Align.LEFT);
             c.drawText(cell.label, pad, base, text);
+            if (cell.dayMark != null) {
+                // Changement de jour : trait épais et « Demain » au-dessus de l'heure.
+                ink.setColor(Ui.COLOR ? Ui.MUTED : Ui.INK);
+                c.drawRect(0, y0, w, y0 + px(Ui.COLOR ? 2 : 3), ink);
+                text.setTextSize(sp(12));
+                text.setColor(Ui.COLOR ? Ui.MUTED : fg);
+                c.drawText(cell.dayMark, pad, y0 + sp(14), text);
+                text.setColor(fg);
+            }
             text.setTextSize(ts);
             WeatherIcon.draw(c, cell.icon, cell.iconNight, w * ICON, y0 + ch / 2f, iconSize, fg, bg);
 

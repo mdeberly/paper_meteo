@@ -12,7 +12,7 @@ import android.view.View;
 import java.util.List;
 
 /**
- * Onglet Prévisions : un jour par ligne (de demain à J+9). Jour et date, icône du temps, température
+ * Onglet Prévisions : un jour par ligne (d'aujourd'hui à J+9). Jour et date, icône du temps, températures
  * maximale et vent, ensoleillement et pluie, chevron. Toucher une ligne ouvre le détail heure par heure.
  */
 public class DayListView extends View {
@@ -20,7 +20,7 @@ public class DayListView extends View {
 
     /** Une ligne de la liste. */
     public static final class Row {
-        String day = "", date = "", tmax = "", wind = "", sun = "", rain = "";
+        String day = "", date = "", tmin = "", tmax = "", wind = "", sun = "", rain = "";
         double windDir = Double.NaN;
         int icon = Weather.NONE;
         boolean weekend;
@@ -77,7 +77,7 @@ public class DayListView extends View {
         if (rows == null) return;
         float w = getWidth(), rh = rowH(), pad = dp(4);
         // Colonnes : jour, icône, température et vent, soleil et pluie, chevron.
-        float xIcon = w * 0.26f, xTemp = w * 0.39f, xSun = w * 0.64f, xChev = w - dp(8);
+        float xIcon = w * 0.24f, xTemp = w * 0.35f, xSun = w * 0.66f, xChev = w - dp(8);
         for (int i = 0; i < rows.size(); i++) {
             Row r = rows.get(i);
             float y0 = i * rh, y1 = y0 + rh * 0.42f, y2 = y0 + rh * 0.8f;
@@ -100,23 +100,30 @@ public class DayListView extends View {
             float size = rh * 0.74f * (Ui.COLOR ? 0.86f : 1f);
             WeatherIcon.draw(c, r.icon, false, xIcon, y0 + rh / 2f, size, Ui.INK, Ui.COLOR && i % 2 == 1 ? ALT_BG : Ui.BG);
 
-            // Température maximale (flèche vers le haut) et vent (flèche dans le sens du vent).
+            // Températures mini (flèche vers le bas) puis maxi (flèche vers le haut), vent en dessous.
             float ic = dp(9) * SCALE;
             text.setColor(Ui.INK);
-            arrowUp(c, xTemp + ic / 2, y1 - sp(19) * 0.35f, ic);
-            text.setTextSize(sp(21));
-            c.drawText(r.tmax, xTemp + ic + dp(8), y1, text);
+            text.setTextSize(sp(Ui.COLOR ? 19 : 18));
+            float ty = y1 - sp(19) * 0.35f;
+            arrow(c, xTemp + ic / 2, ty, ic, false);
+            float tx = xTemp + ic + dp(5);
+            c.drawText(r.tmin, tx, y1, text);
+            tx += Math.max(text.measureText(r.tmin), text.measureText("−0°")) + dp(9);
+            arrow(c, tx + ic / 2, ty, ic, true);
+            c.drawText(r.tmax, tx + ic + dp(5), y1, text);
+            // Colonne soleil / pluie décalée si les températures sont larges.
+            float xs = Math.max(xSun, tx + ic + dp(5) + text.measureText(r.tmax) + dp(10));
             if (!Double.isNaN(r.windDir)) windArrow(c, xTemp + ic / 2, y2 - sp(16) * 0.35f, ic * 0.75f, r.windDir);
             unit(c, r.wind, "km/h", xTemp + ic + dp(8), y2);
 
             // Ensoleillement et pluie.
-            sunIcon(c, xSun + ic / 2, y1 - sp(19) * 0.35f, ic);
+            sunIcon(c, xs + ic / 2, y1 - sp(19) * 0.35f, ic);
             text.setTextSize(sp(18));
             text.setColor(Ui.INK);
-            c.drawText(r.sun, xSun + ic + dp(8), y1, text);
-            drop(c, xSun + ic / 2, y2 - sp(16) * 0.35f, ic);
+            c.drawText(r.sun, xs + ic + dp(8), y1, text);
+            drop(c, xs + ic / 2, y2 - sp(16) * 0.35f, ic);
             text.setTextSize(sp(17));
-            c.drawText(r.rain, xSun + ic + dp(8), y2, text);
+            c.drawText(r.rain, xs + ic + dp(8), y2, text);
 
             // Chevron : la ligne s'ouvre.
             line.setColor(Ui.INK);
@@ -143,12 +150,14 @@ public class DayListView extends View {
         c.drawText(u, vx, y, text);
     }
 
-    private void arrowUp(Canvas c, float cx, float cy, float s) {
+    /** Flèche vers le haut (maxi) ou vers le bas (mini). */
+    private void arrow(Canvas c, float cx, float cy, float s, boolean up) {
         line.setColor(SOFT);
         line.setStrokeWidth(dp(1.6f));
-        c.drawLine(cx, cy + s * 0.6f, cx, cy - s * 0.6f, line);
-        c.drawLine(cx - s * 0.4f, cy - s * 0.2f, cx, cy - s * 0.6f, line);
-        c.drawLine(cx + s * 0.4f, cy - s * 0.2f, cx, cy - s * 0.6f, line);
+        float k = up ? 1 : -1;
+        c.drawLine(cx, cy + k * s * 0.6f, cx, cy - k * s * 0.6f, line);
+        c.drawLine(cx - s * 0.4f, cy - k * s * 0.2f, cx, cy - k * s * 0.6f, line);
+        c.drawLine(cx + s * 0.4f, cy - k * s * 0.2f, cx, cy - k * s * 0.6f, line);
     }
 
     /** Flèche indiquant où va le vent (il vient de {@code from} degrés). */

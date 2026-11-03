@@ -125,7 +125,7 @@ final class L {
 
     static {
         // Onglets, boutons, écran principal.
-        put("tab_summary", "Aujourd'hui", "Today", "Heute", "Hoy", "Oggi", "Hoje", "Dziś");
+        put("tab_summary", "Actuelle", "Now", "Aktuell", "Actual", "Attuale", "Atual", "Teraz");
         put("tab_weather", "Prévisions", "Forecast", "Vorhersage", "Previsión", "Previsioni", "Previsão", "Prognoza");
         put("tab_radar", "Radar", "Radar", "Radar", "Radar", "Radar", "Radar", "Radar");
         put("tab_eph", "Lune", "Moon", "Mond", "Luna", "Luna", "Lua", "Księżyc");

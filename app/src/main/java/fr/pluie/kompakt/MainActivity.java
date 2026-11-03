@@ -56,8 +56,8 @@ public class MainActivity extends Activity {
     private static final long STALE_MS = 30 * 60 * 1000L;
     private static final int REQ_LOC = 1;
 
-    /** Onglet Prévisions : de demain (index 2 de la fenêtre hier … J+9) à J+9. */
-    private static final int FIRST_FORECAST = 2, FORECAST_DAYS = 9;
+    /** Onglet Prévisions : d'aujourd'hui (index 1 de la fenêtre hier … J+9) à J+9. */
+    private static final int FIRST_FORECAST = 1, FORECAST_DAYS = 10;
     private static final int TAB_SUMMARY = 0, TAB_WEATHER = 1, TAB_EPH = 2, TAB_RADAR = 3;
     private static final String[] TAB_KEYS = {"tab_summary", "tab_weather", "tab_eph", "tab_radar"};
 
@@ -332,7 +332,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Prévisions : la liste des jours (demain à J+9) ; toucher un jour ouvre son détail heure par heure.
+        // Prévisions : la liste des jours (aujourd'hui à J+9) ; toucher un jour ouvre son détail heure par heure.
         weatherView = new LinearLayout(this);
         weatherView.setOrientation(LinearLayout.VERTICAL);
         dayList = new DayListView(this);
@@ -704,7 +704,7 @@ public class MainActivity extends Activity {
         updateStatus(L.t("legend") + " · ");
     }
 
-    /** Lignes de la liste des Prévisions, de demain à J+9. */
+    /** Lignes de la liste des Prévisions, d'aujourd'hui à J+9. */
     private List<DayListView.Row> forecastRows(ZoneId zone) {
         List<DayListView.Row> rows = new ArrayList<>();
         int end = Math.min(days.size(), FIRST_FORECAST + FORECAST_DAYS);
@@ -713,10 +713,12 @@ public class MainActivity extends Activity {
             DayListView.Row r = new DayListView.Row();
             r.day = x.date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", L.locale()));
             if (!r.day.endsWith(".") && L.lang() == L.FR) r.day += ".";
+            if (i == 1) r.day = L.item("days_short", 1); // « Auj. »
             r.date = x.date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM"));
             java.time.DayOfWeek dw = x.date.getDayOfWeek();
             r.weekend = dw == java.time.DayOfWeek.SATURDAY || dw == java.time.DayOfWeek.SUNDAY;
             r.tmax = x.temp.hasAny() ? Fmt.deg(x.temp.high()) : "–";
+            r.tmin = x.temp.hasAny() ? Fmt.deg(x.temp.low()) : "–";
             // Vent : le plus fort de la journée, direction dominante (moyenne pondérée par la vitesse).
             double wmax = -1, wx = 0, wy = 0;
             for (int h = 0; h < 24; h++) {
@@ -775,14 +777,22 @@ public class MainActivity extends Activity {
         soonIcon.invalidate();
         soonTotal.setText(mm >= 0.1 ? Fmt.total(mm) + "\u00a0mm" : "");
         renderTodayRows(zone, now.toLocalDate());
-        // Le reste de la journée, heure par heure, de l'heure en cours à 23 h.
-        Day d = forecast.day(now.toLocalDate());
+        // Heure par heure, de l'heure en cours jusqu'au lendemain 8 h.
+        Day d = forecast.day(now.toLocalDate()), nextDay = forecast.day(now.toLocalDate().plusDays(1));
         if (d == null) {
             todayView.setCells(null);
         } else {
             List<int[]> slots = new ArrayList<>();
             for (int h = now.getHour(); h < 24; h++) slots.add(new int[]{h, h + 1});
-            todayView.setCells(cells(d, zone, slots, -1)); // pas de ligne inversée
+            List<DayView.Cell> list = new ArrayList<>(cells(d, zone, slots, -1)); // pas de ligne inversée
+            if (nextDay != null) {
+                List<int[]> morning = new ArrayList<>();
+                for (int h = 0; h < 8; h++) morning.add(new int[]{h, h + 1});
+                List<DayView.Cell> tomorrow = cells(nextDay, zone, morning, -1);
+                if (!tomorrow.isEmpty()) tomorrow.get(0).dayMark = L.item("days_long", 2);
+                list.addAll(tomorrow);
+            }
+            todayView.setCells(list);
         }
     }
 
