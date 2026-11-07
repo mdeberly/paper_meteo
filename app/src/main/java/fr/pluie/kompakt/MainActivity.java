@@ -124,7 +124,7 @@ public class MainActivity extends Activity {
             else ui.postDelayed(this, 800);
         }
     };
-    private TextView summaryText, soonView, soonTotal, totalsText;
+    private TextView summaryText, soonView, soonTotal, totalsText, todayTitle;
     private View totalsRule;
     private View soonIcon;
     private int soonKind = Weather.NONE;
@@ -511,8 +511,6 @@ public class MainActivity extends Activity {
         currentView = new CurrentView(this);
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(150));
         clp.topMargin = dp(2);
-        p.addView(currentView, clp);
-        p.addView(thickRule());
         // Lever et coucher du soleil.
         LinearLayout sunRow = new LinearLayout(this);
         sunRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -525,36 +523,47 @@ public class MainActivity extends Activity {
         todaySet.setCompoundDrawablePadding(dp(6));
         sunRow.addView(labelledBig(L.t("sunrise"), todayRise), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         sunRow.addView(labelledBig(L.t("sunset"), todaySet), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        p.addView(sunRow);
-        p.addView(thickRule());
         // Températures mini / maxi : heures et écarts à gauche, valeurs en grand à droite.
         LinearLayout tempRow = new LinearLayout(this);
         tempRow.setOrientation(LinearLayout.HORIZONTAL);
         tempRow.setGravity(Gravity.CENTER_VERTICAL);
-        todayTempInfo = text(15, false);
+        todayTempInfo = text(14, false);
         todayTempInfo.setLineSpacing(0, 1.1f);
         tempRow.addView(todayTempInfo, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         // Mini puis maxi, en grand, avec « Min. » et « Max. » en petit dessous.
         todayMin = text(32, false);
         todayMax = text(32, false);
+        // Petit thermomètre devant les températures du jour.
+        View thermo = new View(this) {
+            @Override protected void onDraw(android.graphics.Canvas c) {
+                android.graphics.Paint pt = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+                pt.setColor(Ui.COLOR ? 0xFFD9653B : Ui.INK);
+                float w = getWidth(), h = getHeight(), cx = w / 2, sw = Math.max(1.5f, w * 0.12f);
+                float tw = w * 0.2f, br = w * 0.3f, by = h - br - sw;
+                pt.setStyle(android.graphics.Paint.Style.STROKE);
+                pt.setStrokeWidth(sw);
+                c.drawRoundRect(cx - tw, sw, cx + tw, by, tw, tw, pt);
+                pt.setStyle(android.graphics.Paint.Style.FILL);
+                c.drawCircle(cx, by, br, pt);
+                c.drawRect(cx - tw * 0.45f, h * 0.35f, cx + tw * 0.45f, by, pt);
+            }
+        };
+        LinearLayout.LayoutParams tlp2 = new LinearLayout.LayoutParams(dp(16), dp(34));
+        tlp2.rightMargin = dp(8);
+        tlp2.bottomMargin = dp(16);
+        tempRow.addView(thermo, tlp2);
         tempRow.addView(tempColumn(todayMin, L.t("min_short")));
         TextView slash = text(32, false);
         slash.setText(" / ");
         slash.setPadding(0, 0, 0, dp(16));
         tempRow.addView(slash);
         tempRow.addView(tempColumn(todayMax, L.t("max_short")));
-        p.addView(tempRow);
-        p.addView(thickRule());
         summaryText = text(18, false);
         summaryText.setLineSpacing(0, 1.1f);
-        p.addView(summaryText);
         // Totaux de la journée, séparés du résumé par un trait.
         totalsRule = thickRule();
-        p.addView(totalsRule);
         totalsText = text(18, false);
         totalsText.setLineSpacing(0, 1.1f);
-        p.addView(totalsText);
-        p.addView(thickRule());
         // Les 2 prochaines heures : icône du temps, intitulé discret et message, cumul en grand à droite.
         LinearLayout soon = new LinearLayout(this);
         soon.setOrientation(LinearLayout.HORIZONTAL);
@@ -582,7 +591,22 @@ public class MainActivity extends Activity {
         soonTotal = text(Ui.COLOR ? 23 : 26, false);
         soonTotal.setPadding(dp(8), 0, 0, 0);
         soon.addView(soonTotal, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        // Ordre : titre du jour (défile avec le reste), météo actuelle, mini / maxi, 2 prochaines heures,
+        // lever et coucher du soleil, résumé de la journée et totaux, puis le détail heure par heure.
+        todayTitle = text(19, true);
+        todayTitle.setPadding(0, dp(6), 0, 0);
+        p.addView(todayTitle);
+        p.addView(currentView, clp);
+        p.addView(thickRule());
+        p.addView(tempRow);
+        p.addView(thickRule());
         p.addView(soon);
+        p.addView(thickRule());
+        p.addView(sunRow);
+        p.addView(thickRule());
+        p.addView(summaryText);
+        p.addView(totalsRule);
+        p.addView(totalsText);
         p.addView(thickRule());
         DayView header = new DayView(this, true);
         p.addView(header, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, header.rowHeight()));
@@ -697,9 +721,9 @@ public class MainActivity extends Activity {
         Day d = days.get(selected);
 
         // Le titre n'est utile que sur le résumé : ailleurs, le bandeau montre le jour choisi.
-        titleView.setVisibility(tab == TAB_SUMMARY ? View.VISIBLE : View.GONE);
+        titleView.setVisibility(View.GONE); // le titre du jour est dans la page Actuelle, qui défile
         if (tab == TAB_SUMMARY) {
-            titleView.setText(Fmt.title(1, today));
+            todayTitle.setText(Fmt.title(1, today));
             renderSummary(zone);
             updateStatus("");
             return;
