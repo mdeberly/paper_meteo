@@ -298,8 +298,6 @@ final class Weather {
             i = j;
         }
         if (out.isEmpty()) out.add(L.t("no_forecast"));
-        String totals = dayTotals(f, d);
-        if (totals != null) out.add(totals);
         return out;
     }
 

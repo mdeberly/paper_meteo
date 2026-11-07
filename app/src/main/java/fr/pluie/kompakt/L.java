@@ -193,22 +193,10 @@ final class L {
         put("temp_times", "Mini vers {1}, maxi vers {0}", "Low around {1}, high around {0}", "Tiefstwert gegen {1}, Höchstwert gegen {0}",
                 "Mínima hacia las {1}, máxima hacia las {0}", "Minima verso le {1}, massima verso le {0}",
                 "Mínima por volta das {1}, máxima por volta das {0}", "Min. około {1}, maks. około {0}");
+        put("temps_of", "{0} : mini {1}, maxi {2}", "{0}: low {1}, high {2}", "{0}: min. {1}, max. {2}",
+                "{0}: mín. {1}, máx. {2}", "{0}: min. {1}, max. {2}", "{0}: mín. {1}, máx. {2}", "{0}: min. {1}, maks. {2}");
         put("min_short", "Min.", "Min.", "Min.", "Mín.", "Min.", "Mín.", "Min.");
         put("max_short", "Max.", "Max.", "Max.", "Máx.", "Max.", "Máx.", "Maks.");
-        put("than_yesterday", "{0}° de plus qu'hier|{0}° de moins qu'hier|comme hier",
-                "{0}° warmer than yesterday|{0}° cooler than yesterday|same as yesterday",
-                "{0}° wärmer als gestern|{0}° kühler als gestern|wie gestern",
-                "{0}° más que ayer|{0}° menos que ayer|como ayer",
-                "{0}° in più di ieri|{0}° in meno di ieri|come ieri",
-                "{0}° a mais do que ontem|{0}° a menos do que ontem|como ontem",
-                "o {0}° cieplej niż wczoraj|o {0}° chłodniej niż wczoraj|jak wczoraj");
-        put("than_tomorrow", "{0}° de plus que demain|{0}° de moins que demain|comme demain",
-                "{0}° warmer than tomorrow|{0}° cooler than tomorrow|same as tomorrow",
-                "{0}° wärmer als morgen|{0}° kühler als morgen|wie morgen",
-                "{0}° más que mañana|{0}° menos que mañana|como mañana",
-                "{0}° in più di domani|{0}° in meno di domani|come domani",
-                "{0}° a mais do que amanhã|{0}° a menos do que amanhã|como amanhã",
-                "o {0}° cieplej niż jutro|o {0}° chłodniej niż jutro|jak jutro");
         put("feels", "Ressenti {0}", "Feels like {0}", "Gefühlt {0}", "Sensación {0}", "Percepita {0}", "Sensação {0}",
                 "Odczuwalna {0}");
         put("sunrise", "Lever du soleil", "Sunrise", "Sonnenaufgang", "Salida del sol", "Alba", "Nascer do sol", "Wschód słońca");

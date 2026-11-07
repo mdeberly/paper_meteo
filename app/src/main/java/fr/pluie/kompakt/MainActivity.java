@@ -124,7 +124,8 @@ public class MainActivity extends Activity {
             else ui.postDelayed(this, 800);
         }
     };
-    private TextView summaryText, soonView, soonTotal;
+    private TextView summaryText, soonView, soonTotal, totalsText;
+    private View totalsRule;
     private View soonIcon;
     private int soonKind = Weather.NONE;
     private boolean soonNight;
@@ -517,6 +518,11 @@ public class MainActivity extends Activity {
         sunRow.setOrientation(LinearLayout.HORIZONTAL);
         todayRise = text(21, false);
         todaySet = text(21, false);
+        // Petite icône devant chaque heure : soleil qui se lève, soleil qui se couche.
+        todayRise.setCompoundDrawables(new SunEventIcon(true, dp(24)), null, null, null);
+        todaySet.setCompoundDrawables(new SunEventIcon(false, dp(24)), null, null, null);
+        todayRise.setCompoundDrawablePadding(dp(6));
+        todaySet.setCompoundDrawablePadding(dp(6));
         sunRow.addView(labelledBig(L.t("sunrise"), todayRise), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         sunRow.addView(labelledBig(L.t("sunset"), todaySet), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         p.addView(sunRow);
@@ -542,6 +548,12 @@ public class MainActivity extends Activity {
         summaryText = text(18, false);
         summaryText.setLineSpacing(0, 1.1f);
         p.addView(summaryText);
+        // Totaux de la journée, séparés du résumé par un trait.
+        totalsRule = thickRule();
+        p.addView(totalsRule);
+        totalsText = text(18, false);
+        totalsText.setLineSpacing(0, 1.1f);
+        p.addView(totalsText);
         p.addView(thickRule());
         // Les 2 prochaines heures : icône du temps, intitulé discret et message, cumul en grand à droite.
         LinearLayout soon = new LinearLayout(this);
@@ -768,6 +780,8 @@ public class MainActivity extends Activity {
         currentView.setVisibility(forecast != null && forecast.current != null ? View.VISIBLE : View.GONE);
         if (forecast == null) {
             summaryText.setText(L.t("no_data"));
+            totalsText.setVisibility(View.GONE);
+            totalsRule.setVisibility(View.GONE);
             soonView.setText("");
             soonTotal.setText("");
             soonKind = Weather.NONE;
@@ -778,6 +792,10 @@ public class MainActivity extends Activity {
         }
         LocalDateTime now = LocalDateTime.now(zone);
         summaryText.setText(String.join("\n", Weather.summary(forecast, zone, lat(), lon(), now)));
+        String totals = Weather.dayTotals(forecast, now.toLocalDate());
+        totalsText.setText(totals == null ? "" : totals);
+        totalsText.setVisibility(totals == null ? View.GONE : View.VISIBLE);
+        totalsRule.setVisibility(totals == null ? View.GONE : View.VISIBLE);
         soonView.setText(Weather.nextTwoHours(forecast, zone, lat(), lon(), now));
         List<Weather.Hour> next = Weather.hours(forecast, zone, lat(), lon(), now.toLocalDate(), now.getHour(), 2);
         double mm = 0;
@@ -833,17 +851,13 @@ public class MainActivity extends Activity {
         todayMin.setText(Fmt.deg(d.temp.low()));
         todayMax.setText(Fmt.deg(d.temp.high()));
         StringBuilder info = new StringBuilder(L.f("temp_times", L.hour(hiH), L.hour(loH)));
+        // Mini et maxi de la veille et du lendemain.
         Day y = forecast.day(today.minusDays(1)), t = forecast.day(today.plusDays(1));
-        if (y != null && y.temp.hasAny()) info.append('\n').append(compare(d.temp.high() - y.temp.high(), "than_yesterday"));
-        if (t != null && t.temp.hasAny()) info.append('\n').append(compare(d.temp.high() - t.temp.high(), "than_tomorrow"));
+        if (y != null && y.temp.hasAny())
+            info.append('\n').append(L.f("temps_of", L.item("days_long", 0), Fmt.deg(y.temp.low()), Fmt.deg(y.temp.high())));
+        if (t != null && t.temp.hasAny())
+            info.append('\n').append(L.f("temps_of", L.item("days_long", 2), Fmt.deg(t.temp.low()), Fmt.deg(t.temp.high())));
         todayTempInfo.setText(info);
-    }
-
-    /** « 3° de plus qu'hier », « 2° de moins que demain », « comme hier »… (écart des maxi). */
-    private static String compare(double diff, String key) {
-        long n = Math.round(Fmt.fahrenheit ? diff * 9 / 5 : diff);
-        if (n == 0) return Fmt.cap(L.item(key, 2));
-        return L.f(key, Math.abs(n)).split("\\|")[n > 0 ? 0 : 1];
     }
 
     /** Lignes de la liste heure par heure pour les créneaux donnés ; le créneau contenant hour est mis en avant. */
