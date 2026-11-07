@@ -550,14 +550,19 @@ public class MainActivity extends Activity {
         };
         LinearLayout.LayoutParams tlp2 = new LinearLayout.LayoutParams(dp(16), dp(34));
         tlp2.rightMargin = dp(8);
-        tlp2.bottomMargin = dp(16);
-        tempRow.addView(thermo, tlp2);
-        tempRow.addView(tempColumn(todayMin, L.t("min_short")));
+        // Thermomètre et températures regroupés : le thermomètre est centré sur la hauteur de l'ensemble
+        // (valeurs et « Min. » / « Max. » dessous).
+        LinearLayout temps = new LinearLayout(this);
+        temps.setOrientation(LinearLayout.HORIZONTAL);
+        temps.setGravity(Gravity.CENTER_VERTICAL);
+        tempRow.addView(temps);
+        temps.addView(thermo, tlp2);
+        temps.addView(tempColumn(todayMin, L.t("min_short")));
         TextView slash = text(32, false);
         slash.setText(" / ");
         slash.setPadding(0, 0, 0, dp(16));
-        tempRow.addView(slash);
-        tempRow.addView(tempColumn(todayMax, L.t("max_short")));
+        temps.addView(slash);
+        temps.addView(tempColumn(todayMax, L.t("max_short")));
         summaryText = text(18, false);
         summaryText.setLineSpacing(0, 1.1f);
         // Totaux de la journée, séparés du résumé par un trait.
