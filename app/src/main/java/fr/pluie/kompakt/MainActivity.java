@@ -548,7 +548,8 @@ public class MainActivity extends Activity {
                 c.drawRect(cx - tw * 0.45f, h * 0.35f, cx + tw * 0.45f, by, pt);
             }
         };
-        LinearLayout.LayoutParams tlp2 = new LinearLayout.LayoutParams(dp(16), dp(34));
+        // Hauteur de tout le bloc (valeurs et « Min. » / « Max. »).
+        LinearLayout.LayoutParams tlp2 = new LinearLayout.LayoutParams(dp(22), ViewGroup.LayoutParams.MATCH_PARENT);
         tlp2.rightMargin = dp(8);
         // Thermomètre et températures regroupés : le thermomètre est centré sur la hauteur de l'ensemble
         // (valeurs et « Min. » / « Max. » dessous).
