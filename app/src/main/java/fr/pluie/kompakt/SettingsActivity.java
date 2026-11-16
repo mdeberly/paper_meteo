@@ -2,7 +2,10 @@ package fr.pluie.kompakt;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.Manifest;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -77,6 +80,9 @@ public class SettingsActivity extends Activity {
         root.addView(row(L.t("nameday_calendar"), calValue, v -> chooseCalendar()));
         root.addView(rule());
 
+        root.addView(row(L.t("widget_place"), L.t(prefs.getBoolean("widget_gps", false) ? "widget_gps" : "widget_app"),
+                v -> chooseWidgetPlace()));
+        root.addView(rule());
         root.addView(row(L.t("about"), null, v -> showAbout()));
         root.addView(rule());
 
@@ -107,6 +113,66 @@ public class SettingsActivity extends Activity {
         v.setBackgroundColor(Ui.LINE);
         v.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, dp(Ui.LINE_DP))));
         return v;
+    }
+
+    /** Lieu des widgets : celui choisi dans l'appli, ou la position GPS (suivie au fil des déplacements). */
+    private void chooseWidgetPlace() {
+        String[] items = {L.t("widget_app"), L.t("widget_gps")};
+        int current = prefs.getBoolean("widget_gps", false) ? 1 : 0;
+        new AlertDialog.Builder(this)
+                .setTitle(L.t("widget_place"))
+                .setSingleChoiceItems(items, current, (dlg, i) -> {
+                    prefs.edit().putBoolean("widget_gps", i == 1).apply();
+                    dlg.dismiss();
+                    if (i == 1) {
+                        askLocation();
+                    } else {
+                        Widgets.updateAll(this);
+                        recreate();
+                    }
+                })
+                .setNegativeButton(L.t("cancel"), null)
+                .show();
+    }
+
+    private static final int REQ_LOC = 7, REQ_BG = 8;
+
+    /** Position : d'abord pendant l'utilisation, puis « toujours » pour que les widgets suivent les déplacements. */
+    private void askLocation() {
+        boolean fg = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        if (!fg) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOC);
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= 29 && checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            new AlertDialog.Builder(this)
+                    .setTitle(L.t("widget_place"))
+                    .setMessage(L.t("widget_bg_explain"))
+                    .setPositiveButton("OK", (d, w) -> requestPermissions(
+                            new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, REQ_BG))
+                    .setNegativeButton(L.t("cancel"), (d, w) -> done())
+                    .show();
+            return;
+        }
+        done();
+    }
+
+    /** Fin du choix « position GPS » : mise à jour des widgets et de l'écran des réglages. */
+    private void done() {
+        Widgets.refreshAsync(this);
+        recreate();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
+        super.onRequestPermissionsResult(code, perms, results);
+        boolean granted = results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED;
+        if (code == REQ_LOC && granted) askLocation();
+        else if (code == REQ_LOC) done(); // refusé : les widgets gardent le lieu de l'appli
+        else if (code == REQ_BG) done();
     }
 
     private void chooseUnit() {

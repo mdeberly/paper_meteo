@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Widgets réglés sur la position GPS : suivre les déplacements quand l'appli est fermée. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -76,6 +78,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_now_hours" />
+        </receiver>
+
+        <receiver
+            android:name=".Widgets$Big"
+            android:exported="true"
+            android:label="@string/widget_big">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_big" />
         </receiver>
     </application>
 </manifest>

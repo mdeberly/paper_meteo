@@ -4,4 +4,5 @@
     <string name="widget_hours">Paper Meteo · Prochaines heures</string>
     <string name="widget_now_days">Paper Meteo · Actuelle + 3 jours</string>
     <string name="widget_now_hours">Paper Meteo · Actuelle + prochaines heures</string>
+    <string name="widget_big">Paper Meteo · Grand (tout en un)</string>
 </resources>

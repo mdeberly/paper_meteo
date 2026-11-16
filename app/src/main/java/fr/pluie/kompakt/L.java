@@ -305,6 +305,20 @@ final class L {
                 "Automatycznie (język telefonu)");
         put("about", "À propos", "About", "Über die App", "Acerca de", "Informazioni", "Sobre", "O aplikacji");
         put("version", "Version {0}", "Version {0}", "Version {0}", "Versión {0}", "Versione {0}", "Versão {0}", "Wersja {0}");
+        put("widget_place", "Lieu des widgets", "Widget location", "Ort der Widgets", "Lugar de los widgets",
+                "Luogo dei widget", "Local dos widgets", "Miejsce widżetów");
+        put("widget_app", "Lieu choisi dans l'appli", "Place chosen in the app", "In der App gewählter Ort",
+                "Lugar elegido en la app", "Luogo scelto nell'app", "Local escolhido na app", "Miejsce wybrane w aplikacji");
+        put("widget_gps", "Position GPS (suit mes déplacements)", "GPS position (follows me)", "GPS-Position (folgt mir)",
+                "Posición GPS (me sigue)", "Posizione GPS (mi segue)", "Posição GPS (segue-me)", "Pozycja GPS (podąża za mną)");
+        put("widget_bg_explain",
+                "Pour que les widgets suivent vos déplacements même quand l'appli est fermée, autorisez l'accès à la position « Toujours » dans l'écran suivant.",
+                "For the widgets to follow you even when the app is closed, allow location access \"All the time\" on the next screen.",
+                "Damit die Widgets Ihnen auch bei geschlossener App folgen, erlauben Sie den Standortzugriff „Immer“ im nächsten Bildschirm.",
+                "Para que los widgets le sigan incluso con la app cerrada, permita el acceso a la ubicación «Siempre» en la siguiente pantalla.",
+                "Perché i widget la seguano anche ad app chiusa, consenta l'accesso alla posizione «Sempre» nella schermata successiva.",
+                "Para que os widgets o sigam mesmo com a app fechada, permita o acesso à localização «Sempre» no ecrã seguinte.",
+                "Aby widżety podążały za Tobą także przy zamkniętej aplikacji, zezwól na dostęp do lokalizacji „Zawsze” na następnym ekranie.");
         put("latest_release", "Dernière version disponible :", "Latest version available:", "Neueste verfügbare Version:",
                 "Última versión disponible:", "Ultima versione disponibile:", "Última versão disponível:",
                 "Najnowsza dostępna wersja:");

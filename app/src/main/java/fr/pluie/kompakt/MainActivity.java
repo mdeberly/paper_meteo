@@ -197,6 +197,8 @@ public class MainActivity extends Activity {
         else render(); // la date a pu changer depuis la dernière ouverture
         // Lieu GPS enregistré sans nom de commune (versions précédentes ou réseau absent) : on le cherche.
         if (prefs.getString("name", DEF_NAME).startsWith("GPS ")) resolvePlaceName(lat(), lon());
+        // Widgets réglés sur la position GPS : on profite de l'appli ouverte pour la mettre à jour.
+        if (prefs.getBoolean("widget_gps", false)) Widgets.refreshAsync(this);
     }
 
     /** Touche Retour : depuis le détail d'un jour, retour à la liste des Prévisions. */
@@ -1346,7 +1348,7 @@ public class MainActivity extends Activity {
     /** Remplace en arrière-plan le nom « GPS … » par celui de la commune, si on le trouve. */
     private void resolvePlaceName(double la, double lo) {
         io.execute(() -> {
-            String name = placeName(la, lo);
+            String name = placeName(this, la, lo);
             if (name == null || name.isEmpty()) return;
             ui.post(() -> {
                 // Seulement si le lieu n'a pas changé entre-temps.
@@ -1359,7 +1361,7 @@ public class MainActivity extends Activity {
 
     /** Nom de la commune aux coordonnées données (OpenStreetMap, sinon géocodeur du système), ou null. */
     @SuppressWarnings("deprecation")
-    private String placeName(double la, double lo) {
+    static String placeName(android.content.Context ctx, double la, double lo) {
         try {
             String url = String.format(Locale.ROOT,
                     "https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=13&lat=%.5f&lon=%.5f&accept-language=%s",
@@ -1378,7 +1380,7 @@ public class MainActivity extends Activity {
         }
         try {
             if (!Geocoder.isPresent()) return null;
-            List<Address> list = new Geocoder(this, Locale.getDefault()).getFromLocation(la, lo, 1);
+            List<Address> list = new Geocoder(ctx, Locale.getDefault()).getFromLocation(la, lo, 1);
             if (list == null || list.isEmpty()) return null;
             Address a = list.get(0);
             return a.getLocality() != null ? a.getLocality() : a.getSubAdminArea();
