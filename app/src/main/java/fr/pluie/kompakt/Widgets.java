@@ -292,7 +292,7 @@ public final class Widgets {
         t.setColor(Ui.INK);
 
         // Météo actuelle (titre compris) : un peu plus d'un quart de la hauteur.
-        RectF cur = new RectF(a.left, y, a.right, y + h * 0.27f);
+        RectF cur = new RectF(a.left, y, a.right, y + h * 0.31f);
         current(cv, new RectF(cur.left, cur.top, cur.left + cur.width() * 0.5f, cur.bottom), u, f, place);
         Forecast.Current c = f.current;
         if (c != null) {
@@ -347,7 +347,7 @@ public final class Widgets {
         line(cv, a, y, u);
 
         // Prochaines heures puis 5 jours.
-        float hh = (a.bottom - y) / 2;
+        float hh = (a.bottom - y) / 2; // moitié prochaines heures, moitié jours
         hours(cv, new RectF(a.left, y + 4 * u, a.right, y + hh - 2 * u), u, f, zone, lat, lon, now, 6, null, false);
         line(cv, a, y + hh, u);
         days(cv, new RectF(a.left, y + hh + 4 * u, a.right, a.bottom), u, f, zone, lat, lon, now.toLocalDate(), 5, null, false);
@@ -382,14 +382,15 @@ public final class Widgets {
         if (cur == null) return;
         Paint t = new Paint(Paint.ANTI_ALIAS_FLAG);
         t.setColor(Ui.INK);
-        float icon = Math.min(a.width() * 0.45f, (a.bottom - top) * 0.55f);
-        WeatherIcon.draw(cv, Weather.currentKind(cur), !cur.day, a.left + icon / 2, top + icon / 2 + 2 * u, icon, Ui.INK, Ui.BG);
+        // Icône au-dessus des deux lignes de texte (ressenti, vent), sans les toucher.
+        float icon = Math.max(10 * u, Math.min(a.width() * 0.45f, a.bottom - top - 38 * u));
+        WeatherIcon.draw(cv, Weather.currentKind(cur), !cur.day, a.left + icon / 2, top + icon / 2, icon, Ui.INK, Ui.BG);
         t.setTextSize(34 * u);
         String temp = Double.isNaN(cur.temp) ? "–" : Fmt.deg(cur.temp);
         float tw = t.measureText(temp);
         if (tw > a.width() - icon - 4 * u) t.setTextSize(34 * u * (a.width() - icon - 4 * u) / tw);
         t.setTextAlign(Paint.Align.RIGHT);
-        cv.drawText(temp, a.right, top + icon * 0.72f, t);
+        cv.drawText(temp, a.right, top + icon / 2 + t.getTextSize() * 0.36f, t);
         t.setTextAlign(Paint.Align.LEFT);
         t.setTextSize(13 * u);
         float y = a.bottom - 4 * u;
