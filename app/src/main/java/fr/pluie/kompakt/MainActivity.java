@@ -51,8 +51,8 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
 
-    private static final double DEF_LAT = 49.6156, DEF_LON = 3.2194;
-    private static final String DEF_NAME = "Chauny";
+    static final double DEF_LAT = 49.6156, DEF_LON = 3.2194;
+    static final String DEF_NAME = "Chauny";
     private static final long STALE_MS = 30 * 60 * 1000L;
     private static final int REQ_LOC = 1;
 
@@ -1015,16 +1015,7 @@ public class MainActivity extends Activity {
         if (loading) return;
         loading = true;
         statusView.setText(L.t("updating"));
-        final String url = String.format(Locale.US,
-                "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
-                        + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m,"
-                        + "wind_speed_10m,wind_direction_10m,direct_radiation,visibility,snowfall,"
-                        + "relative_humidity_2m,dew_point_2m,cloud_cover_low,cloud_cover_high"
-                        + "&current=temperature_2m,apparent_temperature,weather_code,cloud_cover,precipitation,"
-                        + "wind_speed_10m,wind_direction_10m,is_day,visibility,snowfall,relative_humidity_2m,dew_point_2m,"
-                        + "cloud_cover_low,wind_gusts_10m"
-                        + "&past_days=1&forecast_days=11&timezone=auto",
-                lat(), lon());
+        final String url = forecastUrl(lat(), lon());
         io.execute(() -> {
             try {
                 String body = Http.get(url);
@@ -1034,6 +1025,7 @@ public class MainActivity extends Activity {
                     prefs.edit().putString("json", body).putLong("fetched", System.currentTimeMillis()).apply();
                     loading = false;
                     render();
+                    Widgets.updateAll(this); // les widgets profitent des nouvelles données
                 });
             } catch (Exception e) {
                 ui.post(() -> {
@@ -1043,6 +1035,20 @@ public class MainActivity extends Activity {
                 });
             }
         });
+    }
+
+    /** Adresse de la requête Open-Meteo (aussi utilisée par les widgets). */
+    static String forecastUrl(double lat, double lon) {
+        return String.format(Locale.US,
+                "https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f"
+                        + "&hourly=precipitation,sunshine_duration,cloud_cover,weather_code,temperature_2m,"
+                        + "wind_speed_10m,wind_direction_10m,direct_radiation,visibility,snowfall,"
+                        + "relative_humidity_2m,dew_point_2m,cloud_cover_low,cloud_cover_high"
+                        + "&current=temperature_2m,apparent_temperature,weather_code,cloud_cover,precipitation,"
+                        + "wind_speed_10m,wind_direction_10m,is_day,visibility,snowfall,relative_humidity_2m,dew_point_2m,"
+                        + "cloud_cover_low,wind_gusts_10m"
+                        + "&past_days=1&forecast_days=11&timezone=auto",
+                lat, lon);
     }
 
     // ---------------------------------------------------------------- radar

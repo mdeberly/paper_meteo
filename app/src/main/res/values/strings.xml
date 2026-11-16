@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Noms des widgets dans la liste de l'écran d'accueil (anglais par défaut). -->
+    <string name="widget_days">Paper Meteo · 5-day forecast</string>
+    <string name="widget_hours">Paper Meteo · Next hours</string>
+    <string name="widget_now_days">Paper Meteo · Now + 3 days</string>
+    <string name="widget_now_hours">Paper Meteo · Now + next hours</string>
+</resources>

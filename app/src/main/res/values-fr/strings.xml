@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_days">Paper Meteo · Prévisions 5 jours</string>
+    <string name="widget_hours">Paper Meteo · Prochaines heures</string>
+    <string name="widget_now_days">Paper Meteo · Actuelle + 3 jours</string>
+    <string name="widget_now_hours">Paper Meteo · Actuelle + prochaines heures</string>
+</resources>

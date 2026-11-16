@@ -28,5 +28,54 @@
             android:exported="false"
             android:label="Paramètres"
             android:screenOrientation="portrait" />
+
+        <!-- Widgets 4 × 2 : prévisions seules (jours, heures) ou météo actuelle avec prévisions. -->
+        <receiver
+            android:name=".Widgets$Days"
+            android:exported="true"
+            android:label="@string/widget_days">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_days" />
+        </receiver>
+
+        <receiver
+            android:name=".Widgets$Hours"
+            android:exported="true"
+            android:label="@string/widget_hours">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_hours" />
+        </receiver>
+
+        <receiver
+            android:name=".Widgets$NowDays"
+            android:exported="true"
+            android:label="@string/widget_now_days">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_now_days" />
+        </receiver>
+
+        <receiver
+            android:name=".Widgets$NowHours"
+            android:exported="true"
+            android:label="@string/widget_now_hours">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_now_hours" />
+        </receiver>
     </application>
 </manifest>
