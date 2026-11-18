@@ -9,4 +9,12 @@
         android:layout_height="match_parent"
         android:contentDescription="Paper Meteo"
         android:scaleType="fitCenter" />
+
+    <ImageView
+        android:id="@+id/widget_refresh"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:contentDescription="Actualiser"
+        android:padding="6dp" />
 </FrameLayout>

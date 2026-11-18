@@ -305,6 +305,9 @@ final class L {
                 "Automatycznie (język telefonu)");
         put("about", "À propos", "About", "Über die App", "Acerca de", "Informazioni", "Sobre", "O aplikacji");
         put("version", "Version {0}", "Version {0}", "Version {0}", "Versión {0}", "Versione {0}", "Versão {0}", "Wersja {0}");
+        put("w_updated", "Màj {0}", "Upd. {0}", "Akt. {0}", "Act. {0}", "Agg. {0}", "Atual. {0}", "Akt. {0}");
+        put("w_updating", "Mise à jour…", "Updating…", "Aktualisierung…", "Actualizando…", "Aggiornamento…",
+                "A atualizar…", "Aktualizacja…");
         put("widget_place", "Lieu des widgets", "Widget location", "Ort der Widgets", "Lugar de los widgets",
                 "Luogo dei widget", "Local dos widgets", "Miejsce widżetów");
         put("widget_app", "Lieu choisi dans l'appli", "Place chosen in the app", "In der App gewählter Ort",

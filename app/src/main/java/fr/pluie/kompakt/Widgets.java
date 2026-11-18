@@ -3,6 +3,7 @@ package fr.pluie.kompakt;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -68,6 +69,38 @@ public final class Widgets {
         public void onAppWidgetOptionsChanged(Context c, AppWidgetManager m, int id, Bundle options) {
             draw(c, m, id, kind());
         }
+
+        @Override
+        public void onReceive(Context c, Intent i) {
+            if (ACTION_FORCE.equals(i.getAction())) forceRefresh(c, goAsync());
+            else super.onReceive(c, i);
+        }
+    }
+
+    /** Bouton « actualiser » d'un widget. */
+    static final String ACTION_FORCE = "fr.pluie.kompakt.WIDGET_FORCE";
+    /** Bouton « lecture » du widget radar. */
+    static final String ACTION_PLAY = "fr.pluie.kompakt.WIDGET_PLAY";
+
+    /** Mise à jour forcée : « Mise à jour… » affiché, nouveau téléchargement, puis nouveau dessin. */
+    static void forceRefresh(Context c, BroadcastReceiver.PendingResult pending) {
+        Context app = c.getApplicationContext();
+        prefs(app).edit().putBoolean("w_updating", true).apply();
+        updateAll(app);
+        new Thread(() -> {
+            try {
+                SharedPreferences p = prefs(app);
+                p.edit().putLong("fetched", 0).putLong("w_fetched", 0).apply(); // données périmées : on retélécharge
+                refresh(app);
+                AppWidgetManager m = AppWidgetManager.getInstance(app);
+                if (m != null && m.getAppWidgetIds(new ComponentName(app, Radar.class)).length > 0) Radar.load(app, true);
+            } finally {
+                prefs(app).edit().putBoolean("w_updating", false).apply();
+                updateAll(app);
+                Radar.updateAll(app);
+                if (pending != null) pending.finish();
+            }
+        }).start();
     }
 
     public static final class Days extends Base { @Override int kind() { return DAYS; } }
@@ -197,7 +230,55 @@ public final class Widgets {
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         v.setOnClickPendingIntent(R.id.widget_image, PendingIntent.getActivity(c, kind, open,
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
+        v.setImageViewBitmap(R.id.widget_refresh, refreshIcon(Math.round(28 * density)));
+        v.setOnClickPendingIntent(R.id.widget_refresh, broadcast(c, PROVIDERS[kind], ACTION_FORCE, 100 + kind));
         m.updateAppWidget(id, v);
+    }
+
+    static PendingIntent broadcast(Context c, Class<?> provider, String action, int code) {
+        Intent i = new Intent(c, provider).setAction(action);
+        return PendingIntent.getBroadcast(c, code, i, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    /** Icône « actualiser » : flèche circulaire dans un rond. */
+    static Bitmap refreshIcon(int s) {
+        Bitmap b = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);
+        c.drawCircle(s / 2f, s / 2f, s / 2f - 1, p);
+        p.setColor(Ui.COLOR ? 0xFFFFFFFF : 0xFFFFFFFF);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(s * 0.1f);
+        p.setStrokeCap(Paint.Cap.ROUND);
+        float r = s * 0.24f;
+        c.drawArc(new RectF(s / 2f - r, s / 2f - r, s / 2f + r, s / 2f + r), -60, 290, false, p);
+        p.setStyle(Paint.Style.FILL);
+        android.graphics.Path a = new android.graphics.Path();
+        float ax = s / 2f + r * (float) Math.cos(Math.toRadians(-60)), ay = s / 2f + r * (float) Math.sin(Math.toRadians(-60));
+        a.moveTo(ax + s * 0.12f, ay - s * 0.02f);
+        a.lineTo(ax - s * 0.04f, ay - s * 0.14f);
+        a.lineTo(ax - s * 0.03f, ay + s * 0.08f);
+        a.close();
+        c.drawPath(a, p);
+        return b;
+    }
+
+    /** Icône « lecture » : triangle dans un rond. */
+    static Bitmap playIcon(int s) {
+        Bitmap b = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setColor(Ui.COLOR ? Ui.ACCENT : Ui.INK);
+        c.drawCircle(s / 2f, s / 2f, s / 2f - 1, p);
+        p.setColor(0xFFFFFFFF);
+        android.graphics.Path t = new android.graphics.Path();
+        t.moveTo(s * 0.39f, s * 0.28f);
+        t.lineTo(s * 0.74f, s * 0.5f);
+        t.lineTo(s * 0.39f, s * 0.72f);
+        t.close();
+        c.drawPath(t, p);
+        return b;
     }
 
     // ---------------------------------------------------------------- dessin
@@ -244,6 +325,16 @@ public final class Widgets {
         t.setColor(Ui.INK);
         float pad = 10 * u;
         RectF area = new RectF(card.left + pad, card.top + pad * 0.8f, card.right - pad, card.bottom - pad * 0.8f);
+        // Heure de la dernière mise à jour, en haut à droite (à gauche du bouton « actualiser »).
+        String pre2 = prefs(c).getBoolean("widget_gps", false) && prefs(c).contains("w_json") ? "w_" : "";
+        long fetched = prefs(c).getLong(pre2 + "fetched", 0);
+        String upd = prefs(c).getBoolean("w_updating", false) ? L.t("w_updating")
+                : fetched == 0 ? "" : L.f("w_updated", new java.text.SimpleDateFormat("HH:mm", L.locale()).format(new java.util.Date(fetched)));
+        Paint ut = new Paint(Paint.ANTI_ALIAS_FLAG);
+        ut.setColor(Ui.COLOR ? Ui.MUTED : Ui.INK);
+        ut.setTextSize(11 * u);
+        ut.setTextAlign(Paint.Align.RIGHT);
+        cv.drawText(upd, card.right - 38 * u, card.top + pad * 0.8f + 11 * u, ut);
         if (f == null) {
             t.setTextSize(15 * u);
             t.setTextAlign(Paint.Align.CENTER);
@@ -264,7 +355,7 @@ public final class Widgets {
                 break;
             case NOW_DAYS: {
                 RectF left = new RectF(area.left, area.top, area.left + area.width() * 0.4f, area.bottom);
-                RectF right = new RectF(left.right + 6 * u, area.top, area.right, area.bottom);
+                RectF right = new RectF(left.right + 6 * u, area.top + 16 * u, area.right, area.bottom);
                 current(cv, left, u, f, place);
                 separator(cv, left.right + 3 * u, area, u);
                 days(cv, right, u, f, zone, lat, lon, now.toLocalDate(), 3, null, false);
@@ -272,7 +363,7 @@ public final class Widgets {
             }
             default: {
                 RectF left = new RectF(area.left, area.top, area.left + area.width() * 0.4f, area.bottom);
-                RectF right = new RectF(left.right + 6 * u, area.top, area.right, area.bottom);
+                RectF right = new RectF(left.right + 6 * u, area.top + 16 * u, area.right, area.bottom);
                 current(cv, left, u, f, place);
                 separator(cv, left.right + 3 * u, area, u);
                 hours(cv, right, u, f, zone, lat, lon, now, 4, null, false);
@@ -298,7 +389,7 @@ public final class Widgets {
         if (c != null) {
             t.setTextSize(13 * u);
             t.setTextAlign(Paint.Align.RIGHT);
-            float ry = cur.top + 30 * u;
+            float ry = cur.top + 36 * u;
             if (!Double.isNaN(c.rh)) { cv.drawText(L.f("humidity", Math.round(c.rh)), cur.right, ry, t); ry += 18 * u; }
             if (!Double.isNaN(c.gust) && !Double.isNaN(c.wind) && c.gust >= c.wind + 5) {
                 cv.drawText(L.f("gusts", Math.round(c.gust)), cur.right, ry, t);
@@ -477,5 +568,167 @@ public final class Widgets {
         t.setTextSize(size);
         float w = t.measureText(s);
         if (w > room) t.setTextSize(size * room / w);
+    }
+
+    // ---------------------------------------------------------------- radar
+
+    /**
+     * Widget radar, de taille ajustable : dernière image radar autour du lieu des widgets (même carte
+     * que l'onglet Radar), avec un bouton « lecture » qui fait défiler les images des 2 dernières heures
+     * puis s'arrête sur la dernière, et un bouton « actualiser ».
+     */
+    public static final class Radar extends AppWidgetProvider {
+        private static final int ZOOM = 7;
+        private static final long FRAME_MS = 800;
+        /** Dernières images téléchargées (gardées tant que le processus vit). */
+        private static RadarData.Result frames;
+        private static long framesTime;
+        private static String framesKey = "";
+
+        @Override
+        public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
+            final PendingResult pending = goAsync();
+            new Thread(() -> {
+                try {
+                    load(c, false);
+                    updateAll(c);
+                } finally {
+                    pending.finish();
+                }
+            }).start();
+        }
+
+        @Override
+        public void onAppWidgetOptionsChanged(Context c, AppWidgetManager m, int id, Bundle options) {
+            final PendingResult pending = goAsync();
+            new Thread(() -> {
+                try {
+                    draw(c, m, id, -1);
+                } finally {
+                    pending.finish();
+                }
+            }).start();
+        }
+
+        @Override
+        public void onReceive(Context c, Intent i) {
+            if (ACTION_PLAY.equals(i.getAction())) {
+                final PendingResult pending = goAsync();
+                new Thread(() -> {
+                    try {
+                        play(c);
+                    } finally {
+                        pending.finish();
+                    }
+                }).start();
+            } else if (ACTION_FORCE.equals(i.getAction())) {
+                forceRefresh(c, goAsync());
+            } else {
+                super.onReceive(c, i);
+            }
+        }
+
+        /** Lieu des widgets : position GPS (mode GPS) ou lieu de l'appli. */
+        private static double[] place(Context c) {
+            SharedPreferences p = prefs(c);
+            String pre = p.getBoolean("widget_gps", false) && p.contains("w_lat") ? "w_" : "";
+            return new double[]{
+                    Double.parseDouble(p.getString(pre + "lat", Double.toString(MainActivity.DEF_LAT))),
+                    Double.parseDouble(p.getString(pre + "lon", Double.toString(MainActivity.DEF_LON)))};
+        }
+
+        private static String placeName(Context c) {
+            SharedPreferences p = prefs(c);
+            String pre = p.getBoolean("widget_gps", false) && p.contains("w_lat") ? "w_" : "";
+            return p.getString(pre + "name", MainActivity.DEF_NAME);
+        }
+
+        /** Télécharge les images si besoin (plus de 10 min, autre lieu ou forcé). Hors du fil principal. */
+        static synchronized void load(Context c, boolean force) {
+            double[] ll = place(c);
+            String key = ll[0] + "/" + ll[1];
+            if (!force && frames != null && key.equals(framesKey)
+                    && System.currentTimeMillis() - framesTime < 10 * 60 * 1000L) return;
+            RadarData.Result r = RadarData.load(ll[0], ll[1], ZOOM);
+            if (!r.frames.isEmpty() || frames == null || !key.equals(framesKey)) {
+                frames = r;
+                framesKey = key;
+                framesTime = System.currentTimeMillis();
+            }
+        }
+
+        static void updateAll(Context c) {
+            AppWidgetManager m = AppWidgetManager.getInstance(c);
+            if (m == null) return;
+            for (int id : m.getAppWidgetIds(new ComponentName(c, Radar.class))) draw(c, m, id, -1);
+        }
+
+        /** Lecture : chaque image tour à tour, puis arrêt sur la dernière. */
+        private static void play(Context c) {
+            load(c, false);
+            AppWidgetManager m = AppWidgetManager.getInstance(c);
+            if (m == null || frames == null || frames.frames.isEmpty()) return;
+            int[] ids = m.getAppWidgetIds(new ComponentName(c, Radar.class));
+            int n = frames.frames.size();
+            for (int k = 0; k < n; k++) {
+                long t0 = System.currentTimeMillis();
+                for (int id : ids) draw(c, m, id, k);
+                long wait = FRAME_MS - (System.currentTimeMillis() - t0);
+                if (wait > 0 && k < n - 1) {
+                    try { Thread.sleep(wait); } catch (InterruptedException e) { return; }
+                }
+            }
+        }
+
+        /** Dessine l'image {@code index} (-1 : la dernière image radar). */
+        private static void draw(Context c, AppWidgetManager m, int id, int index) {
+            float density = c.getResources().getDisplayMetrics().density;
+            Bundle o = m.getAppWidgetOptions(id);
+            int wDp = o == null ? 0 : o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+            int hDp = o == null ? 0 : o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+            if (wDp < 100) wDp = 280;
+            if (hDp < 100) hDp = 300;
+            int w = Math.round(wDp * density), h = Math.round(hDp * density);
+            // Taille limitée : l'image passe d'un processus à l'autre à chaque image de l'animation.
+            float k = Math.min(1f, (float) Math.sqrt(420000.0 / (w * (double) h)));
+            Bitmap b = render(c, Math.round(w * k), Math.round(h * k), index);
+            RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_radar);
+            v.setImageViewBitmap(R.id.radar_image, b);
+            Intent open = new Intent(c, MainActivity.class);
+            open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            v.setOnClickPendingIntent(R.id.radar_image, PendingIntent.getActivity(c, 20, open,
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
+            v.setImageViewBitmap(R.id.radar_play, playIcon(Math.round(40 * density)));
+            v.setOnClickPendingIntent(R.id.radar_play, broadcast(c, Radar.class, ACTION_PLAY, 21));
+            v.setImageViewBitmap(R.id.radar_refresh, refreshIcon(Math.round(28 * density)));
+            v.setOnClickPendingIntent(R.id.radar_refresh, broadcast(c, Radar.class, ACTION_FORCE, 22));
+            m.updateAppWidget(id, v);
+        }
+
+        /** Image du widget radar (w × h pixels) : carte, pluie de l'image index, heure et frise. */
+        static Bitmap render(Context c, int w, int h, int index) {
+            MainActivity.applySettings(prefs(c));
+            RadarView rv = new RadarView(c);
+            double[] ll = place(c);
+            rv.setPlace(ll[0], ll[1], placeName(c), ZOOM);
+            try {
+                rv.setMap(MapData.get(c));
+            } catch (Exception ignored) {
+            }
+            if (frames != null) {
+                rv.setFrames(frames.frames);
+                if (index >= 0) rv.show(index);
+                rv.setMessage(frames.failed ? L.t("radar_failed") : "");
+            } else {
+                rv.setMessage(L.t("radar_loading"));
+            }
+            if (prefs(c).getBoolean("w_updating", false)) rv.setMessage(L.t("w_updating"));
+            rv.measure(android.view.View.MeasureSpec.makeMeasureSpec(w, android.view.View.MeasureSpec.EXACTLY),
+                    android.view.View.MeasureSpec.makeMeasureSpec(h, android.view.View.MeasureSpec.EXACTLY));
+            rv.layout(0, 0, w, h);
+            Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
+            rv.draw(new Canvas(b));
+            return b;
+        }
     }
 }
