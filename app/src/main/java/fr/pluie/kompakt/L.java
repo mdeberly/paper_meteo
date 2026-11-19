@@ -308,6 +308,41 @@ final class L {
         put("w_updated", "Màj {0}", "Upd. {0}", "Akt. {0}", "Act. {0}", "Agg. {0}", "Atual. {0}", "Akt. {0}");
         put("w_updating", "Mise à jour…", "Updating…", "Aktualisierung…", "Actualizando…", "Aggiornamento…",
                 "A atualizar…", "Aktualizacja…");
+        // Mise à jour de l'appli depuis les réglages.
+        put("upd_row", "Mise à jour de l'appli", "App update", "App-Aktualisierung", "Actualización de la app",
+                "Aggiornamento dell'app", "Atualização da app", "Aktualizacja aplikacji");
+        put("upd_value", "Version {0} · rechercher une mise à jour", "Version {0} · check for updates",
+                "Version {0} · nach Updates suchen", "Versión {0} · buscar actualizaciones", "Versione {0} · cerca aggiornamenti",
+                "Versão {0} · procurar atualizações", "Wersja {0} · sprawdź aktualizacje");
+        put("upd_searching", "Recherche d'une mise à jour…", "Checking for updates…", "Suche nach Updates…",
+                "Buscando actualizaciones…", "Ricerca aggiornamenti…", "A procurar atualizações…", "Szukanie aktualizacji…");
+        put("upd_none", "Vous avez la dernière version ({0}).", "You have the latest version ({0}).",
+                "Sie haben die neueste Version ({0}).", "Tiene la última versión ({0}).", "Ha l'ultima versione ({0}).",
+                "Tem a versão mais recente ({0}).", "Masz najnowszą wersję ({0}).");
+        put("upd_available", "La version {0} est disponible (version installée : {1}). L'installer maintenant ?",
+                "Version {0} is available (installed: {1}). Install it now?",
+                "Version {0} ist verfügbar (installiert: {1}). Jetzt installieren?",
+                "La versión {0} está disponible (instalada: {1}). ¿Instalarla ahora?",
+                "La versione {0} è disponibile (installata: {1}). Installarla ora?",
+                "A versão {0} está disponível (instalada: {1}). Instalar agora?",
+                "Dostępna jest wersja {0} (zainstalowana: {1}). Zainstalować teraz?");
+        put("upd_install", "Installer", "Install", "Installieren", "Instalar", "Installa", "Instalar", "Zainstaluj");
+        put("upd_later", "Plus tard", "Later", "Später", "Más tarde", "Più tardi", "Mais tarde", "Później");
+        put("upd_downloading", "Téléchargement… {0} %", "Downloading… {0}%", "Download… {0} %", "Descargando… {0} %",
+                "Download… {0} %", "A transferir… {0} %", "Pobieranie… {0}%");
+        put("upd_failed", "Recherche impossible (réseau ?).", "Could not check for updates (network?).",
+                "Suche nicht möglich (Netz?).", "Búsqueda imposible (¿red?).", "Ricerca non riuscita (rete?).",
+                "Pesquisa impossível (rede?).", "Nie można sprawdzić (sieć?).");
+        put("upd_permission",
+                "Pour installer la mise à jour, autorisez Paper Meteo à installer des applis dans l'écran d'Android qui va s'ouvrir, puis revenez et relancez la recherche.",
+                "To install the update, allow Paper Meteo to install apps on the Android screen that opens, then come back and check again.",
+                "Erlauben Sie Paper Meteo im folgenden Android-Bildschirm, Apps zu installieren, und suchen Sie dann erneut.",
+                "Para instalar la actualización, permita a Paper Meteo instalar apps en la pantalla de Android que se abrirá y vuelva a buscar.",
+                "Per installare l'aggiornamento, consenta a Paper Meteo di installare app nella schermata Android che si apre, poi ripeta la ricerca.",
+                "Para instalar a atualização, permita que o Paper Meteo instale apps no ecrã do Android que vai abrir e volte a procurar.",
+                "Aby zainstalować aktualizację, zezwól Paper Meteo na instalowanie aplikacji na ekranie Androida, który się otworzy, i sprawdź ponownie.");
+        put("upd_install_failed", "Installation impossible : {0}", "Installation failed: {0}", "Installation fehlgeschlagen: {0}",
+                "Instalación imposible: {0}", "Installazione non riuscita: {0}", "Instalação impossível: {0}", "Instalacja nieudana: {0}");
         put("widget_place", "Lieu des widgets", "Widget location", "Ort der Widgets", "Lugar de los widgets",
                 "Luogo dei widget", "Local dos widgets", "Miejsce widżetów");
         put("widget_app", "Lieu choisi dans l'appli", "Place chosen in the app", "In der App gewählter Ort",

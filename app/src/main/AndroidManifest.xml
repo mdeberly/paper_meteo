@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Mise à jour depuis l'appli : installation de la nouvelle version (l'utilisateur confirme). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Widgets réglés sur la position GPS : suivre les déplacements quand l'appli est fermée. -->
@@ -28,6 +30,7 @@
             android:name=".SettingsActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
+            android:launchMode="singleTop"
             android:label="Paramètres"
             android:screenOrientation="portrait" />
 

@@ -83,6 +83,8 @@ public class SettingsActivity extends Activity {
         root.addView(row(L.t("widget_place"), L.t(prefs.getBoolean("widget_gps", false) ? "widget_gps" : "widget_app"),
                 v -> chooseWidgetPlace()));
         root.addView(rule());
+        root.addView(row(L.t("upd_row"), L.f("upd_value", versionName()), v -> checkUpdate()));
+        root.addView(rule());
         root.addView(row(L.t("about"), null, v -> showAbout()));
         root.addView(rule());
 
@@ -113,6 +115,85 @@ public class SettingsActivity extends Activity {
         v.setBackgroundColor(Ui.LINE);
         v.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, dp(Ui.LINE_DP))));
         return v;
+    }
+
+    // ---------------------------------------------------------------- mise à jour de l'appli
+
+    private AlertDialog busy;
+
+    /** Recherche d'une nouvelle version sur GitHub, sans quitter l'appli. */
+    private void checkUpdate() {
+        busy = new AlertDialog.Builder(this).setMessage(L.t("upd_searching")).setCancelable(false).show();
+        new Thread(() -> {
+            Updater.Release r = null;
+            try { r = Updater.latest(); } catch (Exception ignored) { }
+            final Updater.Release rel = r;
+            runOnUiThread(() -> {
+                if (isFinishing()) return;
+                busy.dismiss();
+                String mine = versionName();
+                if (rel == null) {
+                    message(L.t("upd_failed"));
+                } else if (rel.apkUrl == null || !Updater.newer(rel.version, mine)) {
+                    message(L.f("upd_none", mine));
+                } else {
+                    new AlertDialog.Builder(this)
+                            .setTitle(L.t("upd_row"))
+                            .setMessage(L.f("upd_available", rel.version, mine))
+                            .setPositiveButton(L.t("upd_install"), (d, w) -> installUpdate(rel))
+                            .setNegativeButton(L.t("upd_later"), null)
+                            .show();
+                }
+            });
+        }).start();
+    }
+
+    private void message(String m) {
+        new AlertDialog.Builder(this).setTitle(L.t("upd_row")).setMessage(m).setPositiveButton("OK", null).show();
+    }
+
+    /** Téléchargement puis installation (après l'autorisation d'Android « Installer des applis inconnues »). */
+    private void installUpdate(Updater.Release rel) {
+        if (!getPackageManager().canRequestPackageInstalls()) {
+            new AlertDialog.Builder(this)
+                    .setTitle(L.t("upd_row"))
+                    .setMessage(L.t("upd_permission"))
+                    .setPositiveButton("OK", (d, w) -> startActivity(new android.content.Intent(
+                            android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                            android.net.Uri.parse("package:" + getPackageName()))))
+                    .setNegativeButton(L.t("cancel"), null)
+                    .show();
+            return;
+        }
+        busy = new AlertDialog.Builder(this).setMessage(L.f("upd_downloading", 0)).setCancelable(false).show();
+        new Thread(() -> {
+            try {
+                java.io.File apk = Updater.download(this, rel.apkUrl,
+                        pc -> runOnUiThread(() -> busy.setMessage(L.f("upd_downloading", pc))));
+                runOnUiThread(() -> {
+                    busy.dismiss();
+                    try {
+                        Updater.install(this, apk);
+                    } catch (Exception e) {
+                        message(L.f("upd_install_failed", String.valueOf(e.getMessage())));
+                    }
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    busy.dismiss();
+                    message(L.t("upd_failed"));
+                });
+            }
+        }).start();
+    }
+
+    /** Retour de l'installateur d'Android (confirmation à afficher, ou erreur). */
+    @Override
+    protected void onNewIntent(android.content.Intent i) {
+        super.onNewIntent(i);
+        if (!Updater.ACTION_STATUS.equals(i.getAction())) return;
+        String err = Updater.onStatus(this, i);
+        if (err != null) message(L.f("upd_install_failed", err));
     }
 
     /** Lieu des widgets : celui choisi dans l'appli, ou la position GPS (suivie au fil des déplacements). */
